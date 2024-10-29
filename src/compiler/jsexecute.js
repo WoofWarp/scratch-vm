@@ -8,14 +8,14 @@
 /* eslint-disable max-len */
 
 const globalState = {
-    Timer: require('../util/timer'),
-    Cast: require('../util/cast'),
-    log: require('../util/log'),
-    blockUtility: require('./compat-block-utility'),
-    thread: null
+    Timer: require("../util/timer"),
+    Cast: require("../util/cast"),
+    log: require("../util/log"),
+    blockUtility: require("./compat-block-utility"),
+    thread: null,
 };
 
-let baseRuntime = '';
+let baseRuntime = "";
 const runtimeFunctions = {};
 
 /**
@@ -137,7 +137,6 @@ const isPromise = value => (
 const executeInCompatibilityLayer = function*(inputs, blockFunction, isWarp, useFlags, blockId, branchInfo) {
     const thread = globalState.thread;
     const blockUtility = globalState.blockUtility;
-    const stackFrame = branchInfo ? branchInfo.stackFrame : {};
 
     const finish = (returnValue) => {
         if (branchInfo) {
@@ -152,51 +151,53 @@ const executeInCompatibilityLayer = function*(inputs, blockFunction, isWarp, use
     };
 
     const executeBlock = () => {
-        blockUtility.init(thread, blockId, stackFrame);
+        blockUtility.init(thread, blockId);
         return blockFunction(inputs, blockUtility);
     };
 
-    let returnValue = executeBlock();
-    if (isPromise(returnValue)) {
-        returnValue = finish(yield* waitPromise(returnValue));
-        if (useFlags) hasResumedFromPromise = true;
-        return returnValue;
-    }
+    return yield* executeBlock();
 
-    if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
-        // Something external is forcing us to stop
-        yield;
-        // Make up a return value because whatever is forcing us to stop can't specify one
-        return '';
-    }
+    // let returnValue = executeBlock();
+    // if (isPromise(returnValue)) {
+    //     returnValue = finish(yield* waitPromise(returnValue));
+    //     if (useFlags) hasResumedFromPromise = true;
+    //     return returnValue;
+    // }
 
-    while (thread.status === 2 /* STATUS_YIELD */ || thread.status === 3 /* STATUS_YIELD_TICK */) {
-        // Yielded threads will run next iteration.
-        if (thread.status === 2 /* STATUS_YIELD */) {
-            thread.status = 0; // STATUS_RUNNING
-            // Yield back to the event loop when stuck or not in warp mode.
-            if (!isWarp || isStuck()) {
-                yield;
-            }
-        } else {
-            // status is STATUS_YIELD_TICK, always yield to the event loop
-            yield;
-        }
+    // if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
+    //     // Something external is forcing us to stop
+    //     yield;
+    //     // Make up a return value because whatever is forcing us to stop can't specify one
+    //     return '';
+    // }
 
-        returnValue = executeBlock();
-        if (isPromise(returnValue)) {
-            returnValue = finish(yield* waitPromise(returnValue));
-            if (useFlags) hasResumedFromPromise = true;
-            return returnValue;
-        }
+    // while (thread.status === 2 /* STATUS_YIELD */ || thread.status === 3 /* STATUS_YIELD_TICK */) {
+    //     // Yielded threads will run next iteration.
+    //     if (thread.status === 2 /* STATUS_YIELD */) {
+    //         thread.status = 0; // STATUS_RUNNING
+    //         // Yield back to the event loop when stuck or not in warp mode.
+    //         if (!isWarp || isStuck()) {
+    //             yield;
+    //         }
+    //     } else {
+    //         // status is STATUS_YIELD_TICK, always yield to the event loop
+    //         yield;
+    //     }
 
-        if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
-            yield;
-            return finish('');
-        }
-    }
+    //     returnValue = executeBlock();
+    //     if (isPromise(returnValue)) {
+    //         returnValue = finish(yield* waitPromise(returnValue));
+    //         if (useFlags) hasResumedFromPromise = true;
+    //         return returnValue;
+    //     }
 
-    return finish(returnValue);
+    //     if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
+    //         yield;
+    //         return finish('');
+    //     }
+    // }
+
+    // return finish(returnValue);
 }`;
 
 /**
@@ -588,9 +589,13 @@ runtimeFunctions.yieldThenCallGenerator = `const yieldThenCallGenerator = functi
  * Step a compiled thread.
  * @param {Thread} thread The thread to step.
  */
-const execute = thread => {
+const execute = (thread, promiseResult) => {
     globalState.thread = thread;
-    thread.generator.next();
+    if (promiseResult && promiseResult[0] !== 0) {
+        if (promiseResult[0] === 1)
+            return thread.generator.next(promiseResult[1]);
+        else return thread.generator.throw(promiseResult[1]);
+    } else return thread.generator.next();
 };
 
 const threadStack = [];
@@ -601,7 +606,7 @@ const restoreGlobalState = () => {
     globalState.thread = threadStack.pop();
 };
 
-const insertRuntime = source => {
+const insertRuntime = (source) => {
     let result = baseRuntime;
     for (const functionName of Object.keys(runtimeFunctions)) {
         if (source.includes(functionName)) {
@@ -617,12 +622,12 @@ const insertRuntime = source => {
  * @param {string} source The string to evaluate.
  * @returns {*} The result of evaluating the string.
  */
-const scopedEval = source => {
+const scopedEval = (source) => {
     const withRuntime = insertRuntime(source);
     try {
-        return new Function('globalState', withRuntime)(globalState);
+        return new Function("globalState", withRuntime)(globalState);
     } catch (e) {
-        globalState.log.error('was unable to compile script', withRuntime);
+        globalState.log.error("was unable to compile script", withRuntime);
         throw e;
     }
 };

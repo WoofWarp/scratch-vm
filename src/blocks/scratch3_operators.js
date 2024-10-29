@@ -37,48 +37,48 @@ class Scratch3OperatorsBlocks {
         };
     }
 
-    add (args) {
-        return Cast.toNumber(args.NUM1) + Cast.toNumber(args.NUM2);
+    *add (args) {
+        return Cast.toNumber(yield* args.NUM1()) + Cast.toNumber(yield* args.NUM2());
     }
 
-    subtract (args) {
-        return Cast.toNumber(args.NUM1) - Cast.toNumber(args.NUM2);
+    *subtract (args) {
+        return Cast.toNumber(yield* args.NUM1()) - Cast.toNumber(yield* args.NUM2());
     }
 
-    multiply (args) {
-        return Cast.toNumber(args.NUM1) * Cast.toNumber(args.NUM2);
+    *multiply (args) {
+        return Cast.toNumber(yield* args.NUM1()) * Cast.toNumber(yield* args.NUM2());
     }
 
-    divide (args) {
-        return Cast.toNumber(args.NUM1) / Cast.toNumber(args.NUM2);
+    *divide (args) {
+        return Cast.toNumber(yield* args.NUM1()) / Cast.toNumber(yield* args.NUM2());
     }
 
-    lt (args) {
-        return Cast.compare(args.OPERAND1, args.OPERAND2) < 0;
+    *lt (args) {
+        return Cast.compare(yield* args.OPERAND1(), yield* args.OPERAND2()) < 0;
     }
 
-    equals (args) {
-        return Cast.compare(args.OPERAND1, args.OPERAND2) === 0;
+    *equals (args) {
+        return Cast.compare(yield* args.OPERAND1(), yield* args.OPERAND2()) === 0;
     }
 
-    gt (args) {
-        return Cast.compare(args.OPERAND1, args.OPERAND2) > 0;
+    *gt (args) {
+        return Cast.compare(yield* args.OPERAND1(), yield* args.OPERAND2()) > 0;
     }
 
-    and (args) {
-        return Cast.toBoolean(args.OPERAND1) && Cast.toBoolean(args.OPERAND2);
+    *and (args) {
+        return Cast.toBoolean(yield* args.OPERAND1()) && Cast.toBoolean(yield* args.OPERAND2());
     }
 
-    or (args) {
-        return Cast.toBoolean(args.OPERAND1) || Cast.toBoolean(args.OPERAND2);
+    *or (args) {
+        return Cast.toBoolean(yield* args.OPERAND1()) || Cast.toBoolean(yield* args.OPERAND2());
     }
 
-    not (args) {
-        return !Cast.toBoolean(args.OPERAND);
+    *not (args) {
+        return !Cast.toBoolean(yield* args.OPERAND());
     }
 
-    random (args) {
-        return this._random(args.FROM, args.TO);
+    *random (args) {
+        return this._random(yield* args.FROM(), yield* args.TO());
     }
     _random (from, to) { // used by compiler
         const nFrom = Cast.toNumber(from);
@@ -93,13 +93,13 @@ class Scratch3OperatorsBlocks {
         return (Math.random() * (high - low)) + low;
     }
 
-    join (args) {
-        return Cast.toString(args.STRING1) + Cast.toString(args.STRING2);
+    *join (args) {
+        return Cast.toString(yield* args.STRING1()) + Cast.toString(yield* args.STRING2());
     }
 
-    letterOf (args) {
-        const index = Cast.toNumber(args.LETTER) - 1;
-        const str = Cast.toString(args.STRING);
+    *letterOf (args) {
+        const index = Cast.toNumber(yield* args.LETTER()) - 1;
+        const str = Cast.toString(yield* args.STRING());
         // Out of bounds?
         if (index < 0 || index >= str.length) {
             return '';
@@ -107,33 +107,33 @@ class Scratch3OperatorsBlocks {
         return str.charAt(index);
     }
 
-    length (args) {
-        return Cast.toString(args.STRING).length;
+    *length (args) {
+        return Cast.toString(yield* args.STRING()).length;
     }
 
-    contains (args) {
+    *contains (args) {
         const format = function (string) {
             return Cast.toString(string).toLowerCase();
         };
-        return format(args.STRING1).includes(format(args.STRING2));
+        return format(yield* args.STRING1()).includes(format(yield* args.STRING2()));
     }
 
-    mod (args) {
-        const n = Cast.toNumber(args.NUM1);
-        const modulus = Cast.toNumber(args.NUM2);
+    *mod (args) {
+        const n = Cast.toNumber(yield* args.NUM1());
+        const modulus = Cast.toNumber(yield* args.NUM2());
         let result = n % modulus;
         // Scratch mod uses floored division instead of truncated division.
         if (result / modulus < 0) result += modulus;
         return result;
     }
 
-    round (args) {
-        return Math.round(Cast.toNumber(args.NUM));
+    *round (args) {
+        return Math.round(Cast.toNumber(yield* args.NUM()));
     }
 
-    mathop (args) {
-        const operator = Cast.toString(args.OPERATOR).toLowerCase();
-        const n = Cast.toNumber(args.NUM);
+    *mathop (args) {
+        const operator = Cast.toString(args.OPERATOR.value).toLowerCase();
+        const n = Cast.toNumber(yield* args.NUM());
         switch (operator) {
         case 'abs': return Math.abs(n);
         case 'floor': return Math.floor(n);

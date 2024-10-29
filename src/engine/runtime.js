@@ -9,7 +9,6 @@ const BlocksRuntimeCache = require('./blocks-runtime-cache');
 const BlockType = require('../extension-support/block-type');
 const Profiler = require('./profiler');
 const Sequencer = require('./sequencer');
-const execute = require('./execute.js');
 const compilerExecute = require('../compiler/jsexecute');
 const ScratchBlocksConstants = require('./scratch-blocks-constants');
 const TargetType = require('../extension-support/target-type');
@@ -2002,7 +2001,7 @@ class Runtime extends EventEmitter {
             this.monitorBlocks :
             target.blocks;
 
-        thread.pushStack(id);
+        // thread.pushStack(id);
         this.threads.push(thread);
         if (!thread.stackClick && !thread.updateMonitor) {
             this.threadMap.set(thread.getId(), thread);
@@ -2069,7 +2068,6 @@ class Runtime extends EventEmitter {
     isActiveThread (thread) {
         return (
             (
-                thread.stack.length > 0 &&
                 thread.status !== Thread.STATUS_DONE) &&
             this.threads.indexOf(thread) > -1);
     }
@@ -2249,18 +2247,18 @@ class Runtime extends EventEmitter {
         // For compatibility with Scratch 2, edge triggered hats need to be processed before
         // threads are stepped. See ScratchRuntime.as for original implementation
         newThreads.forEach(thread => {
-            if (thread.isCompiled) {
-                if (thread.executableHat) {
+            // if (thread.isCompiled) {
+                if (!thread.isCompiled || thread.executableHat) {
                     // It is quite likely that we are currently executing a block, so make sure
                     // that we leave the compiler's state intact at the end.
                     compilerExecute.saveGlobalState();
                     compilerExecute(thread);
                     compilerExecute.restoreGlobalState();
                 }
-            } else {
-                execute(this.sequencer, thread);
-                thread.goToNextBlock();
-            }
+            // } else {
+            //     execute(this.sequencer, thread);
+            //     thread.goToNextBlock();
+            // }
         });
         return newThreads;
     }
@@ -2931,7 +2929,7 @@ class Runtime extends EventEmitter {
             if (this.getIsHat(topBlock.opcode)) {
                 const thread = new Thread(topBlockId);
                 thread.target = target;
-                thread.blockContainer = target.blocks;
+                thread.blockContainer = target.blockContainer;
                 thread.tryCompile();
             }
         });
