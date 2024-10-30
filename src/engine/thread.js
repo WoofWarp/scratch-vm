@@ -1,7 +1,7 @@
-const log = require("../util/log");
-const compilerExecute = require("../compiler/jsexecute");
-const generate = require("./generate");
-const { Yield, YieldTick } = require("./thread-status");
+const log = require('../util/log');
+const compilerExecute = require('../compiler/jsexecute');
+const generate = require('./generate');
+const {Yield, YieldTick} = require('./thread-status');
 
 /**
  * Utility function to determine if a value is a Promise.
@@ -11,8 +11,8 @@ const { Yield, YieldTick } = require("./thread-status");
 const isPromise = function (value) {
     return (
         value !== null &&
-        typeof value === "object" &&
-        typeof value.then === "function"
+        typeof value === 'object' &&
+        typeof value.then === 'function'
     );
 };
 
@@ -22,7 +22,7 @@ const isPromise = function (value) {
  * @constructor
  */
 class Thread {
-    constructor(firstBlock) {
+    constructor (firstBlock) {
         /**
          * ID of top block of the thread
          * @type {!string}
@@ -102,7 +102,7 @@ class Thread {
      * stepping from block to block.
      * @const
      */
-    static get STATUS_RUNNING() {
+    static get STATUS_RUNNING () {
         return 0; // used by compiler
     }
 
@@ -111,7 +111,7 @@ class Thread {
      * execution is paused until the promise changes thread status.
      * @const
      */
-    static get STATUS_PROMISE_WAIT() {
+    static get STATUS_PROMISE_WAIT () {
         return 1; // used by compiler
     }
 
@@ -119,7 +119,7 @@ class Thread {
      * Thread status for yield.
      * @const
      */
-    static get STATUS_YIELD() {
+    static get STATUS_YIELD () {
         return 2; // used by compiler
     }
 
@@ -128,7 +128,7 @@ class Thread {
      * thread is resumed.
      * @const
      */
-    static get STATUS_YIELD_TICK() {
+    static get STATUS_YIELD_TICK () {
         return 3; // used by compiler
     }
 
@@ -137,7 +137,7 @@ class Thread {
      * Thread is in this state when there are no more blocks to execute.
      * @const
      */
-    static get STATUS_DONE() {
+    static get STATUS_DONE () {
         return 4; // used by compiler
     }
 
@@ -146,14 +146,15 @@ class Thread {
      * @param {string} topBlock ID of the thread's top block.
      * @returns {string} A unique ID for this target and thread.
      */
-    static getIdFromTargetAndBlock(target, topBlock) {
+    static getIdFromTargetAndBlock (target, topBlock) {
         // & should never appear in any IDs, so we can use it as a separator
         return `${target.id}&${topBlock}`;
     }
 
-    step() {
-        if (this.status === Thread.STATUS_YIELD)
+    step () {
+        if (this.status === Thread.STATUS_YIELD) {
             this._status = Thread.STATUS_RUNNING;
+        }
         if (!this.generator) {
             this.generator = generate(this.blockContainer, this.topBlock)(this);
         }
@@ -170,11 +171,11 @@ class Thread {
                 // because promise handlers might execute immediately, configure thread.status here
                 this._status = Thread.STATUS_PROMISE_WAIT;
                 v.value.then(
-                    (value) => {
+                    value => {
                         this.promiseResult = [1, value];
                         this._status = Thread.STATUS_RUNNING;
                     },
-                    (error) => {
+                    error => {
                         this.promiseResult = [2, error];
                         this._status = Thread.STATUS_RUNNING;
                     }
@@ -186,7 +187,7 @@ class Thread {
         }
     }
 
-    getId() {
+    getId () {
         return Thread.getIdFromTargetAndBlock(this.target, this.topBlock);
     }
 
@@ -373,11 +374,11 @@ class Thread {
     //     return false;
     // }
 
-    get status() {
+    get status () {
         return this._status;
     }
 
-    kill() {
+    kill () {
         this.requestScriptGlowInFrame = false;
         this._status = Thread.STATUS_DONE;
         this.procedures = null;
@@ -387,13 +388,13 @@ class Thread {
     /**
      * Attempt to compile this thread.
      */
-    tryCompile() {
+    tryCompile () {
         if (!this.blockContainer) {
             return;
         }
 
         // importing the compiler here avoids circular dependency issues
-        const compile = require("../compiler/compile");
+        const compile = require('../compiler/compile');
 
         this.triedToCompile = true;
 
@@ -404,9 +405,9 @@ class Thread {
 
         const topBlock = this.topBlock;
         // Flyout blocks are stored in a special block container.
-        const blocks = this.blockContainer.getBlock(topBlock)
-            ? this.blockContainer
-            : this.target.runtime.flyoutBlocks;
+        const blocks = this.blockContainer.getBlock(topBlock) ?
+            this.blockContainer :
+            this.target.runtime.flyoutBlocks;
         const cachedResult =
             canCache && blocks.getCachedCompileResult(topBlock);
         // If there is a cached error, do not attempt to recompile.
@@ -425,7 +426,7 @@ class Thread {
                 }
             } catch (error) {
                 log.error(
-                    "cannot compile script",
+                    'cannot compile script',
                     this.target.getName(),
                     error
                 );

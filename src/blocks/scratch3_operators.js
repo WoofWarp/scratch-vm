@@ -74,6 +74,7 @@ class Scratch3OperatorsBlocks {
     }
 
     *not (args) {
+        if (!args.OPERAND) return true;
         return !Cast.toBoolean(yield* args.OPERAND());
     }
 

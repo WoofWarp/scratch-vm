@@ -8,14 +8,14 @@
 /* eslint-disable max-len */
 
 const globalState = {
-    Timer: require("../util/timer"),
-    Cast: require("../util/cast"),
-    log: require("../util/log"),
-    blockUtility: require("./compat-block-utility"),
-    thread: null,
+    Timer: require('../util/timer'),
+    Cast: require('../util/cast'),
+    log: require('../util/log'),
+    blockUtility: require('./compat-block-utility'),
+    thread: null
 };
 
-let baseRuntime = "";
+let baseRuntime = '';
 const runtimeFunctions = {};
 
 /**
@@ -592,10 +592,11 @@ runtimeFunctions.yieldThenCallGenerator = `const yieldThenCallGenerator = functi
 const execute = (thread, promiseResult) => {
     globalState.thread = thread;
     if (promiseResult && promiseResult[0] !== 0) {
-        if (promiseResult[0] === 1)
+        if (promiseResult[0] === 1) {
             return thread.generator.next(promiseResult[1]);
-        else return thread.generator.throw(promiseResult[1]);
-    } else return thread.generator.next();
+        }
+        return thread.generator.throw(promiseResult[1]);
+    } return thread.generator.next();
 };
 
 const threadStack = [];
@@ -606,7 +607,7 @@ const restoreGlobalState = () => {
     globalState.thread = threadStack.pop();
 };
 
-const insertRuntime = (source) => {
+const insertRuntime = source => {
     let result = baseRuntime;
     for (const functionName of Object.keys(runtimeFunctions)) {
         if (source.includes(functionName)) {
@@ -622,12 +623,12 @@ const insertRuntime = (source) => {
  * @param {string} source The string to evaluate.
  * @returns {*} The result of evaluating the string.
  */
-const scopedEval = (source) => {
+const scopedEval = source => {
     const withRuntime = insertRuntime(source);
     try {
-        return new Function("globalState", withRuntime)(globalState);
+        return new Function('globalState', withRuntime)(globalState);
     } catch (e) {
-        globalState.log.error("was unable to compile script", withRuntime);
+        globalState.log.error('was unable to compile script', withRuntime);
         throw e;
     }
 };

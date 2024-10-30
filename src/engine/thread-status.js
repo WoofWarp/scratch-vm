@@ -1,3 +1,3 @@
 class Yield {}
 class YieldTick {}
-module.exports = { Yield, YieldTick };
+module.exports = {Yield, YieldTick};

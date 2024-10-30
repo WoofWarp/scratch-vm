@@ -1,9 +1,6 @@
 const BlockUtility = require('../engine/block-utility');
 
 class CompatibilityLayerBlockUtility extends BlockUtility {
-    constructor () {
-        super();
-    }
 
     init (thread, fakeBlockId) {
         this.thread = thread;

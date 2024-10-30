@@ -1,6 +1,6 @@
-const Thread = require('./thread');
-const Timer = require('../util/timer');
-const { Yield, YieldTick } = require('./thread-status');
+// const Thread = require('./thread');
+// const Timer = require('../util/timer');
+const {Yield, YieldTick} = require('./thread-status');
 
 /**
  * @fileoverview

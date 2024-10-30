@@ -1,5 +1,5 @@
-const Timer = require("../util/timer");
-const Thread = require("./thread");
+const Timer = require('../util/timer');
+const Thread = require('./thread');
 // const execute = require("./execute.js");
 // const compilerExecute = require("../compiler/jsexecute");
 
@@ -7,19 +7,19 @@ const Thread = require("./thread");
  * Profiler frame name for stepping a single thread.
  * @const {string}
  */
-const stepThreadProfilerFrame = "Sequencer.stepThread";
+const stepThreadProfilerFrame = 'Sequencer.stepThread';
 
 /**
  * Profiler frame name for the inner loop of stepThreads.
  * @const {string}
  */
-const stepThreadsInnerProfilerFrame = "Sequencer.stepThreads#inner";
+const stepThreadsInnerProfilerFrame = 'Sequencer.stepThreads#inner';
 
 /**
  * Profiler frame name for execute.
  * @const {string}
  */
-const executeProfilerFrame = "execute";
+// const executeProfilerFrame = 'execute';
 
 /**
  * Profiler frame ID for stepThreadProfilerFrame.
@@ -37,10 +37,10 @@ let stepThreadsInnerProfilerId = -1;
  * Profiler frame ID for executeProfilerFrame.
  * @type {number}
  */
-let executeProfilerId = -1;
+// const executeProfilerId = -1;
 
 class Sequencer {
-    constructor(runtime) {
+    constructor (runtime) {
         /**
          * A utility timer for timing thread sequencing.
          * @type {!Timer}
@@ -60,7 +60,7 @@ class Sequencer {
      * Time to run a warp-mode thread, in ms.
      * @type {number}
      */
-    static get WARP_TIME() {
+    static get WARP_TIME () {
         return 500;
     }
 
@@ -68,7 +68,7 @@ class Sequencer {
      * Step through all threads in `this.runtime.threads`, running them in order.
      * @return {Array.<!Thread>} List of inactive threads after stepping.
      */
-    stepThreads() {
+    stepThreads () {
         // Work time is 75% of the thread stepping interval.
         const WORK_TIME = 0.75 * this.runtime.currentStepTime;
         // For compatibility with Scatch 2, update the millisecond clock
@@ -166,14 +166,12 @@ class Sequencer {
                 let nextActiveThread = 0;
                 for (let i = 0; i < this.runtime.threads.length; i++) {
                     const thread = this.runtime.threads[i];
-                    if (
-                        thread.status !== Thread.STATUS_DONE
-                    ) {
-                        this.runtime.threads[nextActiveThread] = thread;
-                        nextActiveThread++;
-                    } else {
+                    if (thread.status === Thread.STATUS_DONE) {
                         this.runtime.threadMap.delete(thread.getId());
                         doneThreads.push(thread);
+                    } else {
+                        this.runtime.threads[nextActiveThread] = thread;
+                        nextActiveThread++;
                     }
                 }
                 this.runtime.threads.length = nextActiveThread;
@@ -189,7 +187,7 @@ class Sequencer {
      * Step the requested thread for as long as necessary.
      * @param {!Thread} thread Thread object to step.
      */
-    stepThread(thread) {
+    stepThread (thread) {
         // if (thread.isCompiled) {
         //     compilerExecute(thread);
         //     return;
@@ -207,7 +205,7 @@ class Sequencer {
         //     }
         // }
         // Save the current block ID to notice if we did control flow.
-        while (1) {
+        for (;;) {
             // let isWarpMode = thread.peekStackFrame().warpMode;
             // if (isWarpMode && !thread.warpTimer) {
             //     // Initialize warp-mode timer if it hasn't been already.
@@ -376,7 +374,7 @@ class Sequencer {
      * Retire a thread in the middle, without considering further blocks.
      * @param {!Thread} thread Thread object to retire.
      */
-    retireThread(thread) {
+    retireThread (thread) {
         thread.kill();
         // thread.stack = [];
         // thread.stackFrame = [];

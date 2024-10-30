@@ -35,16 +35,16 @@ class Scratch3DataBlocks {
         };
     }
 
-    getVariable (args, util) {
+    *getVariable (args, util) {
         const variable = util.target.lookupOrCreateVariable(
             args.VARIABLE.id, args.VARIABLE.name);
         return variable.value;
     }
 
-    setVariableTo (args, util) {
+    *setVariableTo (args, util) {
         const variable = util.target.lookupOrCreateVariable(
             args.VARIABLE.id, args.VARIABLE.name);
-        variable.value = args.VALUE;
+        variable.value = yield* args.VALUE();
 
         if (variable.isCloud) {
             util.ioQuery('cloud', 'requestUpdateVariable', [variable.name, args.VALUE]);

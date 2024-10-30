@@ -50,29 +50,35 @@ class Scratch3ControlBlocks {
         };
     }
 
-    repeat (args, util) {
-        const times = Math.round(Cast.toNumber(args.TIMES));
-        // Initialize loop
-        if (typeof util.stackFrame.loopCounter === 'undefined') {
-            util.stackFrame.loopCounter = times;
+    *repeat (args, util) {
+        const times = Math.round(Cast.toNumber(yield* args.TIMES()));
+        for (let i = times; i--;) {
+            yield* util.SUBSTACK();
         }
-        // Only execute once per frame.
-        // When the branch finishes, `repeat` will be executed again and
-        // the second branch will be taken, yielding for the rest of the frame.
-        // Decrease counter
-        util.stackFrame.loopCounter--;
-        // If we still have some left, start the branch.
-        if (util.stackFrame.loopCounter >= 0) {
-            util.startBranch(1, true);
-        }
+        // // Initialize loop
+        // if (typeof util.stackFrame.loopCounter === 'undefined') {
+        //     util.stackFrame.loopCounter = times;
+        // }
+        // // Only execute once per frame.
+        // // When the branch finishes, `repeat` will be executed again and
+        // // the second branch will be taken, yielding for the rest of the frame.
+        // // Decrease counter
+        // util.stackFrame.loopCounter--;
+        // // If we still have some left, start the branch.
+        // if (util.stackFrame.loopCounter >= 0) {
+        //     util.startBranch(1, true);
+        // }
     }
 
-    repeatUntil (args, util) {
-        const condition = Cast.toBoolean(args.CONDITION);
-        // If the condition is false (repeat UNTIL), start the branch.
-        if (!condition) {
-            util.startBranch(1, true);
+    *repeatUntil (args, util) {
+        while (yield* args.CONDITION()) {
+            yield* args.SUBSTACK();
         }
+        // const condition = Cast.toBoolean(args.CONDITION);
+        // // If the condition is false (repeat UNTIL), start the branch.
+        // if (!condition) {
+        //     util.startBranch(1, true);
+        // }
     }
 
     repeatWhile (args, util) {
@@ -121,19 +127,24 @@ class Scratch3ControlBlocks {
         }
     }
 
-    if (args, util) {
-        const condition = Cast.toBoolean(args.CONDITION);
+    *if (args, util) {
+        const condition = Cast.toBoolean(yield* args.CONDITION());
+        // if (condition) {
+        //     util.startBranch(1, false);
+        // }
         if (condition) {
-            util.startBranch(1, false);
+            yield* args.SUBSTACK();
         }
     }
 
-    ifElse (args, util) {
-        const condition = Cast.toBoolean(args.CONDITION);
+    *ifElse (args, util) {
+        const condition = Cast.toBoolean(yield* args.CONDITION());
         if (condition) {
-            util.startBranch(1, false);
-        } else {
-            util.startBranch(2, false);
+            // util.startBranch(1, false);
+            yield* args.SUBSTACK();
+        } else if (args.SUBSTACK2) {
+            // util.startBranch(2, false);
+            yield* args.SUBSTACK2();
         }
     }
 
