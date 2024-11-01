@@ -146,7 +146,7 @@ class Scratch3DataBlocks {
 
     *deleteAllOfList (args, util) {
         const list = util.target.lookupOrCreateList(
-            yield* args.LIST.id(), yield* args.LIST.name());
+            args.LIST.id, args.LIST.name);
         list.value = [];
         return;
     }
