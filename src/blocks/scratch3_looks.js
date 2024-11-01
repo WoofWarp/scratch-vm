@@ -335,11 +335,12 @@ class Scratch3LooksBlocks {
         this.runtime.emit(Scratch3LooksBlocks.SAY_OR_THINK, target, 'say', message);
     }
 
-    sayforsecs (args, util) {
-        this.say(args, util);
+    *sayforsecs (args, util) {
+        yield* this.say(args, util);
         const target = util.target;
         const usageId = this._getBubbleState(target).usageId;
-        return new Promise(resolve => {
+        const secs = yield* args.SECS();
+        return yield new Promise(resolve => {
             this._bubbleTimeout = setTimeout(() => {
                 this._bubbleTimeout = null;
                 // Clear say bubble if it hasn't been changed and proceed.
@@ -347,18 +348,19 @@ class Scratch3LooksBlocks {
                     this._updateBubble(target, 'say', '');
                 }
                 resolve();
-            }, 1000 * args.SECS);
+            }, 1000 * secs);
         });
     }
 
-    think (args, util) {
-        this.runtime.emit(Scratch3LooksBlocks.SAY_OR_THINK, util.target, 'think', args.MESSAGE);
+    *think (args, util) {
+        this.runtime.emit(Scratch3LooksBlocks.SAY_OR_THINK, util.target, 'think', yield* args.MESSAGE());
     }
 
-    thinkforsecs (args, util) {
-        this.think(args, util);
+    *thinkforsecs (args, util) {
+        yield* this.think(args, util);
         const target = util.target;
         const usageId = this._getBubbleState(target).usageId;
+        const secs = yield* args.SECS();
         return new Promise(resolve => {
             this._bubbleTimeout = setTimeout(() => {
                 this._bubbleTimeout = null;
@@ -367,16 +369,16 @@ class Scratch3LooksBlocks {
                     this._updateBubble(target, 'think', '');
                 }
                 resolve();
-            }, 1000 * args.SECS);
+            }, 1000 * secs);
         });
     }
 
-    show (args, util) {
+    *show (args, util) {
         util.target.setVisible(true);
         this._renderBubble(util.target);
     }
 
-    hide (args, util) {
+    *hide (args, util) {
         util.target.setVisible(false);
         this._renderBubble(util.target);
     }
@@ -464,21 +466,22 @@ class Scratch3LooksBlocks {
         });
     }
 
-    switchCostume (args, util) {
-        this._setCostume(util.target, args.COSTUME); // used by compiler
+    *switchCostume (args, util) {
+        this._setCostume(util.target, yield* args.COSTUME()); // used by compiler
     }
 
-    nextCostume (args, util) {
+    *nextCostume (args, util) {
         this._setCostume(
             util.target, util.target.currentCostume + 1, true
         );
     }
 
-    switchBackdrop (args) {
-        this._setBackdrop(this.runtime.getTargetForStage(), args.BACKDROP);
+    *switchBackdrop (args) {
+        this._setBackdrop(this.runtime.getTargetForStage(), yield* args.BACKDROP());
     }
 
     switchBackdropAndWait (args, util) {
+        // TODO: refactor
         // Have we run before, starting threads?
         if (!util.stackFrame.startedThreads) {
             // No - switch the backdrop.
@@ -516,7 +519,7 @@ class Scratch3LooksBlocks {
         }
     }
 
-    nextBackdrop () {
+    *nextBackdrop () {
         const stage = this.runtime.getTargetForStage();
         this._setBackdrop(
             stage, stage.currentCostume + 1, true
@@ -540,39 +543,39 @@ class Scratch3LooksBlocks {
         return clampedValue;
     }
 
-    changeEffect (args, util) {
-        const effect = Cast.toString(args.EFFECT).toLowerCase();
-        const change = Cast.toNumber(args.CHANGE);
+    *changeEffect (args, util) {
+        const effect = Cast.toString(args.EFFECT.value).toLowerCase();
+        const change = Cast.toNumber(yield* args.CHANGE());
         if (!Object.prototype.hasOwnProperty.call(util.target.effects, effect)) return;
         let newValue = change + util.target.effects[effect];
         newValue = this.clampEffect(effect, newValue);
         util.target.setEffect(effect, newValue);
     }
 
-    setEffect (args, util) {
-        const effect = Cast.toString(args.EFFECT).toLowerCase();
-        let value = Cast.toNumber(args.VALUE);
+    *setEffect (args, util) {
+        const effect = Cast.toString(args.EFFECT.value).toLowerCase();
+        let value = Cast.toNumber(yield* args.VALUE());
         value = this.clampEffect(effect, value);
         util.target.setEffect(effect, value);
     }
 
-    clearEffects (args, util) {
+    *clearEffects (args, util) {
         util.target.clearEffects();
     }
 
-    changeSize (args, util) {
-        const change = Cast.toNumber(args.CHANGE);
+    *changeSize (args, util) {
+        const change = Cast.toNumber(yield* args.CHANGE());
         util.target.setSize(util.target.size + change);
     }
 
-    setSize (args, util) {
-        const size = Cast.toNumber(args.SIZE);
+    *setSize (args, util) {
+        const size = Cast.toNumber(yield* args.SIZE());
         util.target.setSize(size);
     }
 
-    goToFrontBack (args, util) {
+    *goToFrontBack (args, util) {
         if (!util.target.isStage) {
-            if (args.FRONT_BACK === 'front') {
+            if (args.FRONT_BACK.value === 'front') {
                 util.target.goToFront();
             } else {
                 util.target.goToBack();
@@ -580,31 +583,31 @@ class Scratch3LooksBlocks {
         }
     }
 
-    goForwardBackwardLayers (args, util) {
+    *goForwardBackwardLayers (args, util) {
         if (!util.target.isStage) {
-            if (args.FORWARD_BACKWARD === 'forward') {
-                util.target.goForwardLayers(Cast.toNumber(args.NUM));
+            if (args.FORWARD_BACKWARD.value === 'forward') {
+                util.target.goForwardLayers(Cast.toNumber(yield* args.NUM()));
             } else {
-                util.target.goBackwardLayers(Cast.toNumber(args.NUM));
+                util.target.goBackwardLayers(Cast.toNumber(yield* args.NUM()));
             }
         }
     }
 
-    getSize (args, util) {
+    *getSize (args, util) {
         return Math.round(util.target.size);
     }
 
-    getBackdropNumberName (args) {
+    *getBackdropNumberName (args) {
         const stage = this.runtime.getTargetForStage();
-        if (args.NUMBER_NAME === 'number') {
+        if (args.NUMBER_NAME.value === 'number') {
             return stage.currentCostume + 1;
         }
         // Else return name
         return stage.getCostumes()[stage.currentCostume].name;
     }
 
-    getCostumeNumberName (args, util) {
-        if (args.NUMBER_NAME === 'number') {
+    *getCostumeNumberName (args, util) {
+        if (args.NUMBER_NAME.value === 'number') {
             return util.target.currentCostume + 1;
         }
         // Else return name
