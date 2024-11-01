@@ -171,7 +171,7 @@ class Scratch3SoundBlocks {
     }
 
     *playSoundAndWait (args, util) {
-        return yield* this._playSound(args, util, STORE_WAITING);
+        return this._playSound(args, util, STORE_WAITING);
     }
 
     _playSound (args, util, storeWaiting) {
