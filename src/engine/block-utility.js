@@ -1,6 +1,7 @@
 // const Thread = require('./thread');
 // const Timer = require('../util/timer');
-const {Yield, YieldTick} = require('./thread-status');
+const {Yield, YieldTick, StopThisScript} = require('./thread-status');
+const Timer = require('../util/timer');
 
 /**
  * @fileoverview
@@ -16,10 +17,12 @@ class BlockUtility {
          */
         this.sequencer = sequencer;
 
+        this.context = null;
+
         /**
          * The block primitives thread with the block's target, stackFrame and
          * modifiable status.
-         * @type {?Thread}
+         * @type {?import('./thread')}
          */
         this.thread = thread;
 
@@ -85,13 +88,86 @@ class BlockUtility {
         this.sequencer.runtime.stopForTarget(this.thread.target, this.thread);
     }
 
+    stopThisScript (value) {
+        throw new StopThisScript(value);
+    }
+
+    /**
+     * Create and start a timer.
+     * @returns {Timer} - the timer that was created and started.
+     */
+    startTimer () {
+        const timer = this.nowObj ? new Timer(this.nowObj) : new Timer();
+        timer.start();
+        return timer;
+    }
+
+    /**
+     * Step a procedure.
+     * @param {!string} procedureCode Procedure code of procedure to step to.
+     */
+    *startProcedure (procedureCode, param) {
+        const generate = require('./generate');
+        const Sequencer = require('./sequencer');
+        const definition =
+            this.thread.target.blocks.getProcedureDefinition(procedureCode);
+        if (!definition) {
+            return;
+        }
+        const generator = generate(this.thread.blockContainer, definition);
+        // Check if the call is recursive.
+        // If so, set the thread to yield after pushing.
+        // const isRecursive = this.thread.isRecursiveCall(procedureCode);
+        // To step to a procedure, we put its definition on the stack.
+        // Execution for the thread will proceed through the definition hat
+        // and on to the main definition of the procedure.
+        // When that set of blocks finishes executing, it will be popped
+        // from the stack by the sequencer, returning control to the caller.
+        // thread.pushStack(definition);
+        // In known warp-mode threads, only yield when time is up.
+        if (
+            this.thread.warpTimer &&
+            this.thread.warpTimer.timeElapsed() > Sequencer.WARP_TIME
+        ) {
+            yield this.yield();
+        }
+        // Look for warp-mode flag on definition, and set the thread
+        // to warp-mode if needed.
+        const definitionBlock = this.thread.target.blocks.getBlock(definition);
+        const innerBlock = this.thread.target.blocks.getBlock(
+            definitionBlock.inputs.custom_block.block
+        );
+        let doWarp = false;
+        if (innerBlock && innerBlock.mutation) {
+            const warp = innerBlock.mutation.warp;
+            if (typeof warp === 'boolean') {
+                doWarp = warp;
+            } else if (typeof warp === 'string') {
+                doWarp = JSON.parse(warp);
+            }
+        }
+        if (doWarp) {
+            this.thread.warpTimer = new Timer();
+            this.thread.warpTimer.start();
+        }
+        return yield* generator(this.thread, {
+            param
+        });
+        // else if (isRecursive) {
+        //     // In normal-mode threads, yield any time we have a recursive call.
+        //     thread.status = Thread.STATUS_YIELD;
+        // }
+    }
+
     /**
      * Get names and ids of parameters for the given procedure.
      * @param {string} procedureCode Procedure code for procedure to query.
      * @return {Array.<string>} List of param names for a procedure.
      */
     getProcedureParamNamesAndIds (procedureCode) {
-        return this.thread.target.blocks.getProcedureParamNamesAndIds(procedureCode);
+        return this.thread.target.blocks.getProcedureParamNamesAndIds(
+            procedureCode
+        );
     }
 
     /**
@@ -100,7 +176,9 @@ class BlockUtility {
      * @return {Array.<string>} List of param names for a procedure.
      */
     getProcedureParamNamesIdsAndDefaults (procedureCode) {
-        return this.thread.target.blocks.getProcedureParamNamesIdsAndDefaults(procedureCode);
+        return this.thread.target.blocks.getProcedureParamNamesIdsAndDefaults(
+            procedureCode
+        );
     }
 
     /**
@@ -116,7 +194,11 @@ class BlockUtility {
         // and confuse the calling block when we return to it.
         const callerThread = this.thread;
         const callerSequencer = this.sequencer;
-        const result = this.sequencer.runtime.startHats(requestedHat, optMatchFields, optTarget);
+        const result = this.sequencer.runtime.startHats(
+            requestedHat,
+            optMatchFields,
+            optTarget
+        );
 
         // Restore thread and sequencer to prior values before we return to the calling block.
         this.thread = callerThread;
@@ -136,7 +218,8 @@ class BlockUtility {
         // Find the I/O device and execute the query/function call.
         if (
             this.sequencer.runtime.ioDevices[device] &&
-            this.sequencer.runtime.ioDevices[device][func]) {
+            this.sequencer.runtime.ioDevices[device][func]
+        ) {
             const devObject = this.sequencer.runtime.ioDevices[device];
             // TODO: verify correct `this` after switching from apply to spread
             // eslint-disable-next-line prefer-spread

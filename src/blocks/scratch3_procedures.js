@@ -21,30 +21,40 @@ class Scratch3ProcedureBlocks {
         };
     }
 
-    definition () {
+    *definition () {
         // No-op: execute the blocks.
     }
 
-    call (args, util) {
-        const stackFrame = util.stackFrame;
+    *call (args, util) {
         const isReporter = !!args.mutation.return;
 
-        if (stackFrame.executed) {
+        const procedureCode = args.mutation.proccode;
+        const paramNamesIdsAndDefaults =
+            util.getProcedureParamNamesIdsAndDefaults(procedureCode);
+
+        if (paramNamesIdsAndDefaults === null) {
             if (isReporter) {
-                const returnValue = stackFrame.returnValue;
-                // This stackframe will be reused for other reporters in this block, so clean it up for them.
-                // Can't use reset() because that will reset too much.
-                const threadStackFrame = util.thread.peekStackFrame();
-                threadStackFrame.params = null;
-                delete stackFrame.returnValue;
-                delete stackFrame.executed;
-                return returnValue;
+                return '';
             }
             return;
         }
 
-        const procedureCode = args.mutation.proccode;
-        const paramNamesIdsAndDefaults = util.getProcedureParamNamesIdsAndDefaults(procedureCode);
+        // if (stackFrame.executed) {
+        //     if (isReporter) {
+        //         const returnValue = stackFrame.returnValue;
+        //         // This stackframe will be reused for other reporters in this block, so clean it up for them.
+        //         // Can't use reset() because that will reset too much.
+        //         const threadStackFrame = util.thread.peekStackFrame();
+        //         threadStackFrame.params = null;
+        //         delete stackFrame.returnValue;
+        //         delete stackFrame.executed;
+        //         return returnValue;
+        //     }
+        //     return;
+        // }
+
+        // const procedureCode = args.mutation.proccode;
+        // const paramNamesIdsAndDefaults = util.getProcedureParamNamesIdsAndDefaults(procedureCode);
 
         // If null, procedure could not be found, which can happen if custom
         // block is dragged between sprites without the definition.
@@ -61,75 +71,69 @@ class Scratch3ProcedureBlocks {
         // Initialize params for the current stackFrame to {}, even if the procedure does
         // not take any arguments. This is so that `getParam` down the line does not look
         // at earlier stack frames for the values of a given parameter (#1729)
-        util.initParams();
+        const params = {};
         for (let i = 0; i < paramIds.length; i++) {
             if (Object.prototype.hasOwnProperty.call(args, paramIds[i])) {
-                util.pushParam(paramNames[i], args[paramIds[i]]);
+                params[paramNames[i]] = yield* args[paramIds[i]]();
             } else {
-                util.pushParam(paramNames[i], paramDefaults[i]);
+                params[paramNames[i]] = paramDefaults[i];
             }
         }
 
         const addonBlock = util.runtime.getAddonBlock(procedureCode);
         if (addonBlock) {
-            const result = addonBlock.callback(util.thread.getAllparams(), util);
-            if (util.thread.status === 1 /* STATUS_PROMISE_WAIT */) {
-                // If the addon block is using STATUS_PROMISE_WAIT to force us to sleep,
-                // make sure to not re-run this block when we resume.
-                stackFrame.executed = true;
-            }
+            const result = yield* addonBlock.callback(params, util);
             return result;
         }
 
-        stackFrame.executed = true;
-
-        if (isReporter) {
-            util.thread.peekStackFrame().waitingReporter = true;
-            // Default return value
-            stackFrame.returnValue = '';
-        }
-
-        util.startProcedure(procedureCode);
+        const warpTimer = util.thread.warpTimer;
+        yield* util.startProcedure(procedureCode);
+        util.thread.warpTimer = warpTimer;
     }
 
-    return (args, util) {
-        util.stopThisScript();
-        // If used outside of a custom block, there may be no stackframe.
-        if (util.thread.peekStackFrame()) {
-            util.stackFrame.returnValue = args.VALUE;
-        }
+    *return (args, util) {
+        return util.stopThisScript(yield* args.VALUE());
     }
 
-    argumentReporterStringNumber (args, util) {
-        const value = util.getParam(args.VALUE);
-        if (value === null) {
-            // tw: support legacy block
-            if (String(args.VALUE).toLowerCase() === 'last key pressed') {
-                return util.ioQuery('keyboard', 'getLastKeyPressed');
-            }
-            // When the parameter is not found in the most recent procedure
-            // call, the default is always 0.
-            return 0;
+    *argumentReporterStringNumber (args, util) {
+        if (
+            util.context &&
+            util.context.param &&
+            args.VALUE.value in util.context.param
+        ) {
+            return util.context.param[args.VALUE.value];
         }
-        return value;
+        // tw: support legacy block
+        if (String(args.VALUE.value).toLowerCase() === 'last key pressed') {
+            return util.ioQuery('keyboard', 'getLastKeyPressed');
+        }
+        // When the parameter is not found in the most recent procedure
+        // call, the default is always 0.
+        return 0;
     }
 
-    argumentReporterBoolean (args, util) {
-        const value = util.getParam(args.VALUE);
-        if (value === null) {
-            // tw: implement is compiled? and is turbowarp?
-            const lowercaseValue = String(args.VALUE).toLowerCase();
-            if (util.target.runtime.compilerOptions.enabled && lowercaseValue === 'is compiled?') {
-                return true;
-            }
-            if (lowercaseValue === 'is turbowarp?') {
-                return true;
-            }
-            // When the parameter is not found in the most recent procedure
-            // call, the default is always 0.
-            return 0;
+    *argumentReporterBoolean (args, util) {
+        if (
+            util.context &&
+            util.context.param &&
+            args.VALUE.value in util.context.param
+        ) {
+            return util.context.param[args.VALUE.value];
         }
-        return value;
+        // tw: implement is compiled? and is turbowarp?
+        const lowercaseValue = String(args.VALUE.value).toLowerCase();
+        if (
+            util.target.runtime.compilerOptions.enabled &&
+            lowercaseValue === 'is compiled?'
+        ) {
+            return true;
+        }
+        if (lowercaseValue === 'is turbowarp?') {
+            return true;
+        }
+        // When the parameter is not found in the most recent procedure
+        // call, the default is always 0.
+        return 0;
     }
 }
 

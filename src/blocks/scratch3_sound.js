@@ -163,13 +163,15 @@ class Scratch3SoundBlocks {
         };
     }
 
-    playSound (args, util) {
+    *playSound (args, util) {
         // Don't return the promise, it's the only difference for AndWait
-        this._playSound(args, util);
+        this._playSound({
+            SOUND_MENU: yield* args.SOUND_MENU
+        }, util);
     }
 
-    playSoundAndWait (args, util) {
-        return this._playSound(args, util, STORE_WAITING);
+    *playSoundAndWait (args, util) {
+        return yield* this._playSound(args, util, STORE_WAITING);
     }
 
     _playSound (args, util, storeWaiting) {
@@ -237,7 +239,7 @@ class Scratch3SoundBlocks {
         return -1;
     }
 
-    stopAllSounds () {
+    *stopAllSounds () {
         if (this.runtime.targets === null) return;
         const allTargets = this.runtime.targets;
         for (let i = 0; i < allTargets.length; i++) {
@@ -265,12 +267,18 @@ class Scratch3SoundBlocks {
         }
     }
 
-    setEffect (args, util) {
-        return this._updateEffect(args, util, false);
+    *setEffect (args, util) {
+        return this._updateEffect({
+            EFFECT: yield* args.EFFECT(),
+            VALUE: yield* args.VALUE()
+        }, util, false);
     }
 
-    changeEffect (args, util) {
-        return this._updateEffect(args, util, true);
+    *changeEffect (args, util) {
+        return this._updateEffect({
+            EFFECT: yield* args.EFFECT(),
+            VALUE: yield* args.VALUE()
+        }, util, true);
     }
 
     _updateEffect (args, util, change) {
@@ -310,7 +318,7 @@ class Scratch3SoundBlocks {
         target.sprite.soundBank.setEffects(target);
     }
 
-    clearEffects (args, util) {
+    *clearEffects (args, util) {
         this._clearEffectsForTarget(util.target);
     }
 
@@ -331,13 +339,13 @@ class Scratch3SoundBlocks {
         }
     }
 
-    setVolume (args, util) {
-        const volume = Cast.toNumber(args.VOLUME);
+    *setVolume (args, util) {
+        const volume = Cast.toNumber(yield* args.VOLUME());
         return this._updateVolume(volume, util);
     }
 
-    changeVolume (args, util) {
-        const volume = Cast.toNumber(args.VOLUME) + util.target.volume;
+    *changeVolume (args, util) {
+        const volume = Cast.toNumber(yield* args.VOLUME()) + util.target.volume;
         return this._updateVolume(volume, util);
     }
 
@@ -353,20 +361,20 @@ class Scratch3SoundBlocks {
         this.runtime.requestRedraw();
     }
 
-    getVolume (args, util) {
+    *getVolume (args, util) {
         return util.target.volume;
     }
 
-    soundsMenu (args) {
-        return args.SOUND_MENU;
+    *soundsMenu (args) {
+        return args.SOUND_MENU.value;
     }
 
-    beatsMenu (args) {
-        return args.BEATS;
+    *beatsMenu (args) {
+        return args.BEATS.value;
     }
 
-    effectsMenu (args) {
-        return args.EFFECT;
+    *effectsMenu (args) {
+        return args.EFFECT.value;
     }
 }
 

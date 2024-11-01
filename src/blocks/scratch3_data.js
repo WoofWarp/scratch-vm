@@ -51,11 +51,11 @@ class Scratch3DataBlocks {
         }
     }
 
-    changeVariableBy (args, util) {
+    *changeVariableBy (args, util) {
         const variable = util.target.lookupOrCreateVariable(
             args.VARIABLE.id, args.VARIABLE.name);
         const castedValue = Cast.toNumber(variable.value);
-        const dValue = Cast.toNumber(args.VALUE);
+        const dValue = Cast.toNumber(yield* args.VALUE());
         const newValue = castedValue + dValue;
         variable.value = newValue;
 
@@ -74,23 +74,23 @@ class Scratch3DataBlocks {
         }, this.runtime);
     }
 
-    showVariable (args) {
+    *showVariable (args) {
         this.changeMonitorVisibility(args.VARIABLE.id, true);
     }
 
-    hideVariable (args) {
+    *hideVariable (args) {
         this.changeMonitorVisibility(args.VARIABLE.id, false);
     }
 
-    showList (args) {
+    *showList (args) {
         this.changeMonitorVisibility(args.LIST.id, true);
     }
 
-    hideList (args) {
+    *hideList (args) {
         this.changeMonitorVisibility(args.LIST.id, false);
     }
 
-    getListContents (args, util) {
+    *getListContents (args, util) {
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
 
@@ -123,17 +123,17 @@ class Scratch3DataBlocks {
 
     }
 
-    addToList (args, util) {
+    *addToList (args, util) {
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
-        list.value.push(args.ITEM);
+        list.value.push(yield* args.ITEM());
         list._monitorUpToDate = false;
     }
 
-    deleteOfList (args, util) {
+    *deleteOfList (args, util) {
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
-        const index = Cast.toListIndex(args.INDEX, list.value.length, true);
+        const index = Cast.toListIndex(yield* args.INDEX(), list.value.length, true);
         if (index === Cast.LIST_INVALID) {
             return;
         } else if (index === Cast.LIST_ALL) {
@@ -144,18 +144,18 @@ class Scratch3DataBlocks {
         list._monitorUpToDate = false;
     }
 
-    deleteAllOfList (args, util) {
+    *deleteAllOfList (args, util) {
         const list = util.target.lookupOrCreateList(
-            args.LIST.id, args.LIST.name);
+            yield* args.LIST.id(), yield* args.LIST.name());
         list.value = [];
         return;
     }
 
-    insertAtList (args, util) {
-        const item = args.ITEM;
+    *insertAtList (args, util) {
+        const item = yield* args.ITEM();
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
-        const index = Cast.toListIndex(args.INDEX, list.value.length + 1, false);
+        const index = Cast.toListIndex(yield* args.INDEX(), list.value.length + 1, false);
         if (index === Cast.LIST_INVALID) {
             return;
         }
@@ -163,11 +163,11 @@ class Scratch3DataBlocks {
         list._monitorUpToDate = false;
     }
 
-    replaceItemOfList (args, util) {
-        const item = args.ITEM;
+    *replaceItemOfList (args, util) {
+        const item = yield* args.ITEM();
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
-        const index = Cast.toListIndex(args.INDEX, list.value.length, false);
+        const index = Cast.toListIndex(yield* args.INDEX(), list.value.length, false);
         if (index === Cast.LIST_INVALID) {
             return;
         }
@@ -175,18 +175,18 @@ class Scratch3DataBlocks {
         list._monitorUpToDate = false;
     }
 
-    getItemOfList (args, util) {
+    *getItemOfList (args, util) {
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
-        const index = Cast.toListIndex(args.INDEX, list.value.length, false);
+        const index = Cast.toListIndex(yield* args.INDEX(), list.value.length, false);
         if (index === Cast.LIST_INVALID) {
             return '';
         }
         return list.value[index - 1];
     }
 
-    getItemNumOfList (args, util) {
-        const item = args.ITEM;
+    *getItemNumOfList (args, util) {
+        const item = yield* args.ITEM();
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
 
@@ -213,14 +213,14 @@ class Scratch3DataBlocks {
         return 0;
     }
 
-    lengthOfList (args, util) {
+    *lengthOfList (args, util) {
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
         return list.value.length;
     }
 
-    listContainsItem (args, util) {
-        const item = args.ITEM;
+    *listContainsItem (args, util) {
+        const item = yield* args.ITEM();
         const list = util.target.lookupOrCreateList(
             args.LIST.id, args.LIST.name);
         if (list.value.indexOf(item) >= 0) {

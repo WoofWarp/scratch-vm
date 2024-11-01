@@ -1,3 +1,12 @@
 class Yield {}
 class YieldTick {}
-module.exports = {Yield, YieldTick};
+class StopThisScript {
+    /**
+   *
+   * @param {*} value
+   */
+    constructor (value) {
+        this.value = value;
+    }
+}
+module.exports = {Yield, YieldTick, StopThisScript};

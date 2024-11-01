@@ -326,9 +326,9 @@ class Scratch3LooksBlocks {
         };
     }
 
-    say (args, util) {
+    *say (args, util) {
         // @TODO in 2.0 calling say/think resets the right/left bias of the bubble
-        const message = args.MESSAGE;
+        const message = yield* args.MESSAGE();
         this._say(message, util.target);
     }
     _say (message, target) { // used by compiler

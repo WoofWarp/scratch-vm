@@ -49,7 +49,7 @@ class Sequencer {
 
         /**
          * Reference to the runtime owning this sequencer.
-         * @type {!Runtime}
+         * @type {!import('./runtime')}
          */
         this.runtime = runtime;
 
@@ -139,7 +139,7 @@ class Sequencer {
                         this.runtime.profiler.increment(stepThreadProfilerId);
                     }
                     this.stepThread(activeThread);
-                    activeThread.warpTimer = null;
+                    if (activeThread.warpTimer) activeThread.warpTimer.startTime = Timer.nowObj.now();
                 }
                 if (activeThread.status === Thread.STATUS_RUNNING) {
                     numActiveThreads++;

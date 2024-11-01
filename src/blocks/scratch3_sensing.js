@@ -165,11 +165,12 @@ class Scratch3SensingBlocks {
         }
     }
 
-    askAndWait (args, util) {
+    *askAndWait (args, util) {
         const _target = util.target;
-        return new Promise(resolve => {
+        const question = String(yield* args.QUESTION());
+        return yield new Promise(resolve => {
             const isQuestionAsked = this._questionList.length > 0;
-            this._enqueueAsk(String(args.QUESTION), resolve, _target, _target.visible, _target.isStage);
+            this._enqueueAsk(question, resolve, _target, _target.visible, _target.isStage);
             if (!isQuestionAsked) {
                 this._askNextQuestion();
             }
@@ -180,33 +181,34 @@ class Scratch3SensingBlocks {
         return this._answer;
     }
 
-    touchingObject (args, util) {
-        return util.target.isTouchingObject(args.TOUCHINGOBJECTMENU);
+    *touchingObject (args, util) {
+        return util.target.isTouchingObject(yield* args.TOUCHINGOBJECTMENU());
     }
 
-    touchingColor (args, util) {
-        const color = Cast.toRgbColorList(args.COLOR);
+    *touchingColor (args, util) {
+        const color = Cast.toRgbColorList(yield* args.COLOR());
         return util.target.isTouchingColor(color);
     }
 
-    colorTouchingColor (args, util) {
-        const maskColor = Cast.toRgbColorList(args.COLOR);
-        const targetColor = Cast.toRgbColorList(args.COLOR2);
+    *colorTouchingColor (args, util) {
+        const maskColor = Cast.toRgbColorList(yield* args.COLOR());
+        const targetColor = Cast.toRgbColorList(yield* args.COLOR2());
         return util.target.colorIsTouchingColor(targetColor, maskColor);
     }
 
-    distanceTo (args, util) {
+    *distanceTo (args, util) {
         if (util.target.isStage) return 10000;
 
         let targetX = 0;
         let targetY = 0;
-        if (args.DISTANCETOMENU === '_mouse_') {
+        let distanceToMenu = yield* args.DISTANCETOMENU();
+        if (distanceToMenu === '_mouse_') {
             targetX = util.ioQuery('mouse', 'getScratchX');
             targetY = util.ioQuery('mouse', 'getScratchY');
         } else {
-            args.DISTANCETOMENU = Cast.toString(args.DISTANCETOMENU);
+            distanceToMenu = Cast.toString(distanceToMenu);
             const distTarget = this.runtime.getSpriteTargetByName(
-                args.DISTANCETOMENU
+                distanceToMenu
             );
             if (!distTarget) return 10000;
             targetX = distTarget.x;
@@ -218,32 +220,32 @@ class Scratch3SensingBlocks {
         return Math.sqrt((dx * dx) + (dy * dy));
     }
 
-    setDragMode (args, util) {
-        util.target.setDraggable(args.DRAG_MODE === 'draggable');
+    *setDragMode (args, util) {
+        util.target.setDraggable(args.DRAG_MODE.value === 'draggable');
     }
 
-    getTimer (args, util) {
+    *getTimer (args, util) {
         return util.ioQuery('clock', 'projectTimer');
     }
 
-    resetTimer (args, util) {
+    *resetTimer (args, util) {
         util.ioQuery('clock', 'resetProjectTimer');
     }
 
-    getMouseX (args, util) {
+    *getMouseX (args, util) {
         return util.ioQuery('mouse', 'getScratchX');
     }
 
-    getMouseY (args, util) {
+    *getMouseY (args, util) {
         return util.ioQuery('mouse', 'getScratchY');
     }
 
-    getMouseDown (args, util) {
+    *getMouseDown (args, util) {
         return util.ioQuery('mouse', 'getIsDown');
     }
 
-    current (args) {
-        const menuOption = Cast.toString(args.CURRENTMENU).toLowerCase();
+    *current (args) {
+        const menuOption = Cast.toString(args.CURRENTMENU.value).toLowerCase();
         const date = new Date();
         switch (menuOption) {
         case 'year': return date.getFullYear();
@@ -257,11 +259,11 @@ class Scratch3SensingBlocks {
         return 0;
     }
 
-    getKeyPressed (args, util) {
-        return util.ioQuery('keyboard', 'getKeyIsDown', [args.KEY_OPTION]);
+    *getKeyPressed (args, util) {
+        return util.ioQuery('keyboard', 'getKeyIsDown', [yield* args.KEY_OPTION()]);
     }
 
-    daysSince2000 () {
+    *daysSince2000 () {
         const msPerDay = 24 * 60 * 60 * 1000;
         const start = new Date(2000, 0, 1); // Months are 0-indexed.
         const today = new Date();
@@ -271,7 +273,7 @@ class Scratch3SensingBlocks {
         return mSecsSinceStart / msPerDay;
     }
 
-    getLoudness () {
+    *getLoudness () {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
         if (this.runtime.currentStepTime === null) return -1;
 
@@ -286,18 +288,20 @@ class Scratch3SensingBlocks {
         return this._cachedLoudness;
     }
 
-    isLoud () {
-        return this.getLoudness() > 10;
+    *isLoud () {
+        return yield* this.getLoudness() > 10;
     }
 
-    getAttributeOf (args) {
+    *getAttributeOf (args) {
         let attrTarget;
+        let object = yield* args.OBJECT();
+        const property = yield* args.PROPERTY();
 
-        if (args.OBJECT === '_stage_') {
+        if (object === '_stage_') {
             attrTarget = this.runtime.getTargetForStage();
         } else {
-            args.OBJECT = Cast.toString(args.OBJECT);
-            attrTarget = this.runtime.getSpriteTargetByName(args.OBJECT);
+            object = Cast.toString(object);
+            attrTarget = this.runtime.getSpriteTargetByName(object);
         }
 
         // attrTarget can be undefined if the target does not exist
@@ -307,7 +311,7 @@ class Scratch3SensingBlocks {
 
         // Generic attributes
         if (attrTarget.isStage) {
-            switch (args.PROPERTY) {
+            switch (property) {
             // Scratch 1.4 support
             case 'background #': return attrTarget.currentCostume + 1;
 
@@ -317,7 +321,7 @@ class Scratch3SensingBlocks {
             case 'volume': return attrTarget.volume;
             }
         } else {
-            switch (args.PROPERTY) {
+            switch (property) {
             case 'x position': return attrTarget.x;
             case 'y position': return attrTarget.y;
             case 'direction': return attrTarget.direction;
@@ -330,7 +334,7 @@ class Scratch3SensingBlocks {
         }
 
         // Target variables.
-        const varName = args.PROPERTY;
+        const varName = property;
         const variable = attrTarget.lookupVariableByNameAndType(varName, '', true);
         if (variable) {
             return variable.value;
@@ -340,7 +344,7 @@ class Scratch3SensingBlocks {
         return 0;
     }
 
-    getUsername (args, util) {
+    *getUsername (args, util) {
         return util.ioQuery('userData', 'getUsername');
     }
 }

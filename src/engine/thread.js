@@ -43,7 +43,7 @@ class Thread {
 
         /**
          * Target of this thread.
-         * @type {?Target}
+         * @type {?import('./target')}
          */
         this.target = null;
 
@@ -68,7 +68,7 @@ class Thread {
         /**
          * A timer for when the thread enters warp mode.
          * Substitutes the sequencer's count toward WORK_TIME on a per-thread basis.
-         * @type {?Timer}
+         * @type {?import('../util/timer')}
          */
         this.warpTimer = null;
 
@@ -158,7 +158,7 @@ class Thread {
         if (!this.generator) {
             this.generator = generate(this.blockContainer, this.topBlock)(this);
         }
-        if (this.status === Thread.STATUS_RUNNING) {
+        while (this.status === Thread.STATUS_RUNNING) {
             const v = compilerExecute(this, this.promiseResult);
             this.promiseResult = [0, null];
             if (v.value instanceof Yield) {
@@ -180,6 +180,8 @@ class Thread {
                         this._status = Thread.STATUS_RUNNING;
                     }
                 );
+            } else {
+                this.promiseResult = [1, v.value];
             }
             if (v.done) {
                 this._status = Thread.STATUS_DONE;

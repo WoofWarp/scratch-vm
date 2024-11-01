@@ -61,8 +61,8 @@ class Scratch3MotionBlocks {
         };
     }
 
-    moveSteps (args, util) {
-        const steps = Cast.toNumber(args.STEPS);
+    *moveSteps (args, util) {
+        const steps = Cast.toNumber(yield* args.STEPS());
         this._moveSteps(steps, util.target);
     }
     _moveSteps (steps, target) { // used by compiler
@@ -72,9 +72,9 @@ class Scratch3MotionBlocks {
         target.setXY(target.x + dx, target.y + dy);
     }
 
-    goToXY (args, util) {
-        const x = Cast.toNumber(args.X);
-        const y = Cast.toNumber(args.Y);
+    *goToXY (args, util) {
+        const x = Cast.toNumber(yield* args.X());
+        const y = Cast.toNumber(yield* args.Y());
         util.target.setXY(x, y);
     }
 
@@ -99,40 +99,41 @@ class Scratch3MotionBlocks {
         return [targetX, targetY];
     }
 
-    goTo (args, util) {
-        const targetXY = this.getTargetXY(args.TO, util);
+    *goTo (args, util) {
+        const targetXY = this.getTargetXY(yield* args.TO(), util);
         if (targetXY) {
             util.target.setXY(targetXY[0], targetXY[1]);
         }
     }
 
-    turnRight (args, util) {
-        const degrees = Cast.toNumber(args.DEGREES);
+    *turnRight (args, util) {
+        const degrees = Cast.toNumber(yield* args.DEGREES());
         util.target.setDirection(util.target.direction + degrees);
     }
 
-    turnLeft (args, util) {
-        const degrees = Cast.toNumber(args.DEGREES);
+    *turnLeft (args, util) {
+        const degrees = Cast.toNumber(yield* args.DEGREES());
         util.target.setDirection(util.target.direction - degrees);
     }
 
-    pointInDirection (args, util) {
-        const direction = Cast.toNumber(args.DIRECTION);
+    *pointInDirection (args, util) {
+        const direction = Cast.toNumber(yield* args.DIRECTION());
         util.target.setDirection(direction);
     }
 
-    pointTowards (args, util) {
+    *pointTowards (args, util) {
         let targetX = 0;
         let targetY = 0;
-        if (args.TOWARDS === '_mouse_') {
+        let towards = yield* args.TOWARDS();
+        if (towards === '_mouse_') {
             targetX = util.ioQuery('mouse', 'getScratchX');
             targetY = util.ioQuery('mouse', 'getScratchY');
-        } else if (args.TOWARDS === '_random_') {
+        } else if (towards === '_random_') {
             util.target.setDirection(Math.round(Math.random() * 360) - 180);
             return;
         } else {
-            args.TOWARDS = Cast.toString(args.TOWARDS);
-            const pointTarget = this.runtime.getSpriteTargetByName(args.TOWARDS);
+            towards = Cast.toString(towards);
+            const pointTarget = this.runtime.getSpriteTargetByName(towards);
             if (!pointTarget) return;
             targetX = pointTarget.x;
             targetY = pointTarget.y;
@@ -144,49 +145,42 @@ class Scratch3MotionBlocks {
         util.target.setDirection(direction);
     }
 
-    glide (args, util) {
-        if (util.stackFrame.timer) {
-            const timeElapsed = util.stackFrame.timer.timeElapsed();
-            if (timeElapsed < util.stackFrame.duration * 1000) {
-                // In progress: move to intermediate position.
-                const frac = timeElapsed / (util.stackFrame.duration * 1000);
-                const dx = frac * (util.stackFrame.endX - util.stackFrame.startX);
-                const dy = frac * (util.stackFrame.endY - util.stackFrame.startY);
-                util.target.setXY(
-                    util.stackFrame.startX + dx,
-                    util.stackFrame.startY + dy
-                );
-                util.yield();
-            } else {
+    *glide (args, util) {
+        // First time: save data for future use.
+        const timer = util.startTimer();
+        const duration = Cast.toNumber(yield* args.SECS());
+        const startX = util.target.x; const startY = util.target.y;
+        const endX = Cast.toNumber(yield* args.X()); const endY = Cast.toNumber(yield* args.Y());
+        if (duration <= 0) {
+            // Duration too short to glide.
+            util.target.setXY(endX, endY);
+            return;
+        }
+        yield util.yield();
+        while (1) {
+            const timeElapsed = timer.timeElapsed();
+            if (timeElapsed >= duration * 1000) {
                 // Finished: move to final position.
-                util.target.setXY(util.stackFrame.endX, util.stackFrame.endY);
+                util.target.setXY(endX, endY);
+                break;
             }
-        } else {
-            // First time: save data for future use.
-            util.stackFrame.timer = new Timer();
-            util.stackFrame.timer.start();
-            util.stackFrame.duration = Cast.toNumber(args.SECS);
-            util.stackFrame.startX = util.target.x;
-            util.stackFrame.startY = util.target.y;
-            util.stackFrame.endX = Cast.toNumber(args.X);
-            util.stackFrame.endY = Cast.toNumber(args.Y);
-            if (util.stackFrame.duration <= 0) {
-                // Duration too short to glide.
-                util.target.setXY(util.stackFrame.endX, util.stackFrame.endY);
-                return;
-            }
-            util.yield();
+            // In progress: move to intermediate position.
+            const frac = timeElapsed / (duration * 1000);
+            const dx = frac * (endX - startX);
+            const dy = frac * (endY - startY);
+            util.target.setXY(startX + dx, startY + dy);
+            yield util.yield();
         }
     }
 
-    glideTo (args, util) {
-        const targetXY = this.getTargetXY(args.TO, util);
+    *glideTo (args, util) {
+        const targetXY = this.getTargetXY(yield* args.TO(), util);
         if (targetXY) {
             this.glide({SECS: args.SECS, X: targetXY[0], Y: targetXY[1]}, util);
         }
     }
 
-    ifOnEdgeBounce (args, util) {
+    *ifOnEdgeBounce (args, util) {
         this._ifOnEdgeBounce(util.target);
     }
     _ifOnEdgeBounce (target) { // used by compiler
@@ -245,39 +239,39 @@ class Scratch3MotionBlocks {
         target.setXY(fencedPosition[0], fencedPosition[1]);
     }
 
-    setRotationStyle (args, util) {
-        util.target.setRotationStyle(args.STYLE);
+    *setRotationStyle (args, util) {
+        util.target.setRotationStyle(args.STYLE.value);
     }
 
-    changeX (args, util) {
-        const dx = Cast.toNumber(args.DX);
+    *changeX (args, util) {
+        const dx = Cast.toNumber(yield* args.DX());
         util.target.setXY(util.target.x + dx, util.target.y);
     }
 
-    setX (args, util) {
-        const x = Cast.toNumber(args.X);
+    *setX (args, util) {
+        const x = Cast.toNumber(yield* args.X());
         util.target.setXY(x, util.target.y);
     }
 
-    changeY (args, util) {
-        const dy = Cast.toNumber(args.DY);
+    *changeY (args, util) {
+        const dy = Cast.toNumber(yield* args.DY());
         util.target.setXY(util.target.x, util.target.y + dy);
     }
 
-    setY (args, util) {
-        const y = Cast.toNumber(args.Y);
+    *setY (args, util) {
+        const y = Cast.toNumber(yield* args.Y());
         util.target.setXY(util.target.x, y);
     }
 
-    getX (args, util) {
+    *getX (args, util) {
         return this.limitPrecision(util.target.x);
     }
 
-    getY (args, util) {
+    *getY (args, util) {
         return this.limitPrecision(util.target.y);
     }
 
-    getDirection (args, util) {
+    *getDirection (args, util) {
         return util.target.direction;
     }
 

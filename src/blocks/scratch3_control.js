@@ -71,8 +71,9 @@ class Scratch3ControlBlocks {
     }
 
     *repeatUntil (args, util) {
-        while (yield* args.CONDITION()) {
+        while (!(yield* args.CONDITION())) {
             yield* args.SUBSTACK();
+            yield util.yield();
         }
         // const condition = Cast.toBoolean(args.CONDITION);
         // // If the condition is false (repeat UNTIL), start the branch.
@@ -81,49 +82,53 @@ class Scratch3ControlBlocks {
         // }
     }
 
-    repeatWhile (args, util) {
-        const condition = Cast.toBoolean(args.CONDITION);
-        // If the condition is true (repeat WHILE), start the branch.
-        if (condition) {
-            util.startBranch(1, true);
+    *repeatWhile (args, util) {
+        while (yield* args.CONDITION()) {
+            yield* args.SUBSTACK();
+            yield util.yield();
         }
     }
 
-    forEach (args, util) {
+    *forEach (args, util) {
         const variable = util.target.lookupOrCreateVariable(
             args.VARIABLE.id, args.VARIABLE.name);
-
-        if (typeof util.stackFrame.index === 'undefined') {
-            util.stackFrame.index = 0;
+        
+        for (let i = 1; i <= Number(args.VALUE); i++) {
+            variable.value = i;
+            yield* args.SUBSTACK();
+            yield util.yield();
         }
+        // if (typeof util.stackFrame.index === 'undefined') {
+        //     util.stackFrame.index = 0;
+        // }
 
-        if (util.stackFrame.index < Number(args.VALUE)) {
-            util.stackFrame.index++;
-            variable.value = util.stackFrame.index;
-            util.startBranch(1, true);
+        // if (util.stackFrame.index < Number(args.VALUE)) {
+        //     util.stackFrame.index++;
+        //     variable.value = util.stackFrame.index;
+        //     util.startBranch(1, true);
+        // }
+    }
+
+    *waitUntil (args, util) {
+        while (!Cast.toBoolean(yield* args.CONDITION())) {
+            yield util.yield();
         }
     }
 
-    waitUntil (args, util) {
-        const condition = Cast.toBoolean(args.CONDITION);
-        if (!condition) {
-            util.yield();
+    *forever (args, util) {
+        for (;;) {
+            yield* args.SUBSTACK();
+            yield util.yield();
         }
     }
 
-    forever (args, util) {
-        util.startBranch(1, true);
-    }
-
-    wait (args, util) {
-        if (util.stackTimerNeedsInit()) {
-            const duration = Math.max(0, 1000 * Cast.toNumber(args.DURATION));
-
-            util.startStackTimer(duration);
-            this.runtime.requestRedraw();
-            util.yield();
-        } else if (!util.stackTimerFinished()) {
-            util.yield();
+    *wait (args, util) {
+        const duration = Math.max(0, 1000 * Cast.toNumber(yield* args.DURATION()));
+        const timer = util.startTimer(duration);
+        this.runtime.requestRedraw();
+        yield util.yield();
+        while (timer.timeElapsed() < duration) {
+            yield util.yield();
         }
     }
 
@@ -148,8 +153,8 @@ class Scratch3ControlBlocks {
         }
     }
 
-    stop (args, util) {
-        const option = args.STOP_OPTION;
+    *stop (args, util) {
+        const option = args.STOP_OPTION.value;
         if (option === 'all') {
             util.stopAll();
         } else if (option === 'other scripts in sprite' ||
@@ -160,8 +165,8 @@ class Scratch3ControlBlocks {
         }
     }
 
-    createClone (args, util) {
-        this._createClone(Cast.toString(args.CLONE_OPTION), util.target);
+    *createClone (args, util) {
+        this._createClone(Cast.toString(yield* args.CLONE_OPTION()), util.target);
     }
     _createClone (cloneOption, target) { // used by compiler
         // Set clone target
@@ -185,32 +190,32 @@ class Scratch3ControlBlocks {
         }
     }
 
-    deleteClone (args, util) {
+    *deleteClone (args, util) {
         if (util.target.isOriginal) return;
         this.runtime.disposeTarget(util.target);
         this.runtime.stopForTarget(util.target);
     }
 
-    getCounter () {
+    *getCounter () {
         return this._counter;
     }
 
-    clearCounter () {
+    *clearCounter () {
         this._counter = 0;
     }
 
-    incrCounter () {
+    *incrCounter () {
         this._counter++;
     }
 
-    allAtOnce (args, util) {
+    *allAtOnce (args, util) {
         // Since the "all at once" block is implemented for compatiblity with
         // Scratch 2.0 projects, it behaves the same way it did in 2.0, which
         // is to simply run the contained script (like "if 1 = 1").
         // (In early versions of Scratch 2.0, it would work the same way as
         // "run without screen refresh" custom blocks do now, but this was
         // removed before the release of 2.0.)
-        util.startBranch(1, false);
+        yield* args.SUBSTACK();
     }
 }
 
