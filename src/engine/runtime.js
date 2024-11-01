@@ -21,6 +21,7 @@ const xmlEscape = require('../util/xml-escape');
 const ScratchLinkWebSocket = require('../util/scratch-link-websocket');
 const FontManager = require('./tw-font-manager');
 const fetchWithTimeout = require('../util/fetch-with-timeout');
+const generate = require('./generate');
 const platform = require('./tw-platform.js');
 
 // Virtual I/O devices.
@@ -2251,6 +2252,9 @@ class Runtime extends EventEmitter {
             if (!thread.isCompiled || thread.executableHat) {
                 // It is quite likely that we are currently executing a block, so make sure
                 // that we leave the compiler's state intact at the end.
+                if (!thread.generator) {
+                    thread.generator = generate(thread.blockContainer, thread.topBlock)(thread);
+                }
                 compilerExecute.saveGlobalState();
                 compilerExecute(thread);
                 compilerExecute.restoreGlobalState();
