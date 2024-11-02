@@ -123,7 +123,7 @@ class BlockUtility {
         if (!definition) {
             return;
         }
-        const generator = generate(this.thread.blockContainer, definition);
+        const generator = generate(this.thread.target.blocks, definition);
 
         const procedureStack = this.context?.procStack ?? [];
 
@@ -174,13 +174,15 @@ class BlockUtility {
                 yield this.yield();
             }
         }
-        return yield* generator(
+        const res = yield* generator(
             this.thread,
             Object.assign({}, this.context, {
-                params: Object.assign({}, this.context?.params, params),
+                params,
                 procStack: procedureStack,
             })
         );
+        procedureStack.pop();
+        return res;
         // else if (isRecursive) {
         //     // In normal-mode threads, yield any time we have a recursive call.
         //     thread.status = Thread.STATUS_YIELD;
