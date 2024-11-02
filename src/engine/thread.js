@@ -1,7 +1,7 @@
 const log = require('../util/log');
 const compilerExecute = require('../compiler/jsexecute');
 const generate = require('./generate');
-const {Yield, YieldTick} = require('./thread-status');
+const {StopThisScript, Yield, YieldTick} = require('./thread-status');
 
 /**
  * Utility function to determine if a value is a Promise.
@@ -155,36 +155,41 @@ class Thread {
         if (this.status === Thread.STATUS_YIELD) {
             this._status = Thread.STATUS_RUNNING;
         }
-        if (!this.generator) {
-            this.generator = generate(this.blockContainer, this.topBlock)(this);
-        }
         while (this.status === Thread.STATUS_RUNNING) {
-            const v = compilerExecute(this, this.promiseResult);
-            this.promiseResult = [0, null];
-            if (v.value instanceof Yield) {
-                this._status = Thread.STATUS_YIELD;
-            } else if (v.value instanceof YieldTick) {
-                this._status = Thread.STATUS_YIELD_TICK;
-            } else if (isPromise(v.value)) {
-                // enter STATUS_PROMISE_WAIT and yield
-                // this will stop script execution until the promise handlers reset the thread status
-                // because promise handlers might execute immediately, configure thread.status here
-                this._status = Thread.STATUS_PROMISE_WAIT;
-                v.value.then(
-                    value => {
-                        this.promiseResult = [1, value];
-                        this._status = Thread.STATUS_RUNNING;
-                    },
-                    error => {
-                        this.promiseResult = [2, error];
-                        this._status = Thread.STATUS_RUNNING;
-                    }
-                );
-            } else {
+            try {
+                const v = compilerExecute(this, this.promiseResult);
+                this.promiseResult = [0, null];
+                if (v.value instanceof Yield) {
+                    this._status = Thread.STATUS_YIELD;
+                } else if (v.value instanceof YieldTick) {
+                    this._status = Thread.STATUS_YIELD_TICK;
+                } else if (isPromise(v.value)) {
+                    // enter STATUS_PROMISE_WAIT and yield
+                    // this will stop script execution until the promise handlers reset the thread status
+                    // because promise handlers might execute immediately, configure thread.status here
+                    this._status = Thread.STATUS_PROMISE_WAIT;
+                    v.value.then(
+                        value => {
+                            this.promiseResult = [1, value];
+                            this._status = Thread.STATUS_RUNNING;
+                        },
+                        error => {
+                            this.promiseResult = [2, error];
+                            this._status = Thread.STATUS_RUNNING;
+                        }
+                    );
+                    return;
+                }
                 this.promiseResult = [1, v.value];
-            }
-            if (v.done) {
-                this._status = Thread.STATUS_DONE;
+                if (v.done) {
+                    this.kill();
+                }
+            } catch (e) {
+                if (e instanceof StopThisScript) {
+                    this.kill();
+                    return;
+                }
+                throw e;
             }
         }
     }
@@ -390,74 +395,76 @@ class Thread {
     /**
      * Attempt to compile this thread.
      */
-    tryCompile () {
+    compile (useCompiler) {
         if (!this.blockContainer) {
             return;
         }
 
-        // importing the compiler here avoids circular dependency issues
-        const compile = require('../compiler/compile');
+        if (useCompiler) {
+            // importing the compiler here avoids circular dependency issues
+            const compile = require('../compiler/compile');
 
-        this.triedToCompile = true;
+            this.triedToCompile = true;
 
-        // stackClick === true disables hat block generation
-        // It would be great to cache these separately, but for now it's easiest to just disable them to avoid
-        // cached versions of scripts breaking projects.
-        const canCache = !this.stackClick;
+            // stackClick === true disables hat block generation
+            // It would be great to cache these separately, but for now it's easiest to just disable them to avoid
+            // cached versions of scripts breaking projects.
+            const canCache = !this.stackClick;
 
-        const topBlock = this.topBlock;
-        // Flyout blocks are stored in a special block container.
-        const blocks = this.blockContainer.getBlock(topBlock) ?
-            this.blockContainer :
-            this.target.runtime.flyoutBlocks;
-        const cachedResult =
-            canCache && blocks.getCachedCompileResult(topBlock);
-        // If there is a cached error, do not attempt to recompile.
-        if (cachedResult && !cachedResult.success) {
-            return;
-        }
-
-        let result;
-        if (cachedResult) {
-            result = cachedResult.value;
-        } else {
-            try {
-                result = compile(this);
-                if (canCache) {
-                    blocks.cacheCompileResult(topBlock, result);
-                }
-            } catch (error) {
-                log.error(
-                    'cannot compile script',
-                    this.target.getName(),
-                    error
-                );
-                if (canCache) {
-                    blocks.cacheCompileError(topBlock, error);
-                }
-                this.target.runtime.emitCompileError(this.target, error);
+            const topBlock = this.topBlock;
+            // Flyout blocks are stored in a special block container.
+            const blocks = this.blockContainer.getBlock(topBlock) ?
+                this.blockContainer :
+                this.target.runtime.flyoutBlocks;
+            const cachedResult =
+                canCache && blocks.getCachedCompileResult(topBlock);
+            // If there is a cached error, do not attempt to recompile.
+            if (cachedResult && !cachedResult.success) {
                 return;
             }
+
+            let result;
+            if (cachedResult) {
+                result = cachedResult.value;
+            } else {
+                try {
+                    result = compile(this);
+                    if (canCache) {
+                        blocks.cacheCompileResult(topBlock, result);
+                    }
+                } catch (error) {
+                    log.error(
+                        'cannot compile script',
+                        this.target.getName(),
+                        error
+                    );
+                    if (canCache) {
+                        blocks.cacheCompileError(topBlock, error);
+                    }
+                    this.target.runtime.emitCompileError(this.target, error);
+                    return;
+                }
+            }
+
+            this.procedures = {};
+            for (const procedureCode of Object.keys(result.procedures)) {
+                this.procedures[procedureCode] =
+                    result.procedures[procedureCode](this);
+            }
+
+            this.generator = result.startingFunction(this)();
+
+            this.executableHat = result.executableHat;
+
+            if (!this.blockContainer.forceNoGlow) {
+                this.blockGlowInFrame = this.topBlock;
+                this.requestScriptGlowInFrame = true;
+            }
+
+            this.isCompiled = true;
+        } else {
+            this.generator = generate(this.blockContainer, this.topBlock)(this);
         }
-
-        this.procedures = {};
-        for (const procedureCode of Object.keys(result.procedures)) {
-            this.procedures[procedureCode] =
-                result.procedures[procedureCode](this);
-        }
-
-        const res = (this.generator = result.startingFunction(this)());
-
-        this.executableHat = result.executableHat;
-
-        if (!this.blockContainer.forceNoGlow) {
-            this.blockGlowInFrame = this.topBlock;
-            this.requestScriptGlowInFrame = true;
-        }
-
-        this.isCompiled = true;
-
-        return res;
     }
 }
 

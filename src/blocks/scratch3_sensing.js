@@ -220,31 +220,31 @@ class Scratch3SensingBlocks {
         return Math.sqrt((dx * dx) + (dy * dy));
     }
 
-    *setDragMode (args, util) {
+    setDragMode (args, util) {
         util.target.setDraggable(args.DRAG_MODE.value === 'draggable');
     }
 
-    *getTimer (args, util) {
+    getTimer (args, util) {
         return util.ioQuery('clock', 'projectTimer');
     }
 
-    *resetTimer (args, util) {
+    resetTimer (args, util) {
         util.ioQuery('clock', 'resetProjectTimer');
     }
 
-    *getMouseX (args, util) {
+    getMouseX (args, util) {
         return util.ioQuery('mouse', 'getScratchX');
     }
 
-    *getMouseY (args, util) {
+    getMouseY (args, util) {
         return util.ioQuery('mouse', 'getScratchY');
     }
 
-    *getMouseDown (args, util) {
+    getMouseDown (args, util) {
         return util.ioQuery('mouse', 'getIsDown');
     }
 
-    *current (args) {
+    current (args) {
         const menuOption = Cast.toString(args.CURRENTMENU.value).toLowerCase();
         const date = new Date();
         switch (menuOption) {
@@ -263,7 +263,7 @@ class Scratch3SensingBlocks {
         return util.ioQuery('keyboard', 'getKeyIsDown', [yield* args.KEY_OPTION()]);
     }
 
-    *daysSince2000 () {
+    daysSince2000 () {
         const msPerDay = 24 * 60 * 60 * 1000;
         const start = new Date(2000, 0, 1); // Months are 0-indexed.
         const today = new Date();
@@ -273,7 +273,7 @@ class Scratch3SensingBlocks {
         return mSecsSinceStart / msPerDay;
     }
 
-    *getLoudness () {
+    getLoudness () {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
         if (this.runtime.currentStepTime === null) return -1;
 
@@ -288,14 +288,14 @@ class Scratch3SensingBlocks {
         return this._cachedLoudness;
     }
 
-    *isLoud () {
-        return yield* this.getLoudness() > 10;
+    isLoud () {
+        return this.getLoudness() > 10;
     }
 
     *getAttributeOf (args) {
         let attrTarget;
         let object = yield* args.OBJECT();
-        const property = yield* args.PROPERTY();
+        const property = args.PROPERTY.value;
 
         if (object === '_stage_') {
             attrTarget = this.runtime.getTargetForStage();
@@ -344,7 +344,7 @@ class Scratch3SensingBlocks {
         return 0;
     }
 
-    *getUsername (args, util) {
+    getUsername (args, util) {
         return util.ioQuery('userData', 'getUsername');
     }
 }

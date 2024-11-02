@@ -1,3 +1,5 @@
+const {StopThisScript} = require('../engine/thread-status');
+
 class Scratch3ProcedureBlocks {
     constructor (runtime) {
         /**
@@ -87,53 +89,51 @@ class Scratch3ProcedureBlocks {
         }
 
         const warpTimer = util.thread.warpTimer;
-        yield* util.startProcedure(procedureCode);
-        util.thread.warpTimer = warpTimer;
+        try {
+            yield* util.startProcedure(procedureCode, params);
+        } catch (e) {
+            if (e instanceof StopThisScript) return e.value ?? '';
+            throw e;
+        } finally {
+            util.thread.warpTimer = warpTimer;
+        }
+        return '';
     }
 
     *return (args, util) {
         return util.stopThisScript(yield* args.VALUE());
     }
 
-    *argumentReporterStringNumber (args, util) {
-        if (
-            util.context &&
-            util.context.param &&
-            args.VALUE.value in util.context.param
-        ) {
-            return util.context.param[args.VALUE.value];
+    argumentReporterStringNumber (args, util) {
+        const value = util.getParam(args.VALUE.value);
+        if (value === null) {
+            // tw: support legacy block
+            if (String(args.VALUE.value).toLowerCase() === 'last key pressed') {
+                return util.ioQuery('keyboard', 'getLastKeyPressed');
+            }
+            // When the parameter is not found in the most recent procedure
+            // call, the default is always 0.
+            return 0;
         }
-        // tw: support legacy block
-        if (String(args.VALUE.value).toLowerCase() === 'last key pressed') {
-            return util.ioQuery('keyboard', 'getLastKeyPressed');
-        }
-        // When the parameter is not found in the most recent procedure
-        // call, the default is always 0.
-        return 0;
+        return value;
     }
 
-    *argumentReporterBoolean (args, util) {
-        if (
-            util.context &&
-            util.context.param &&
-            args.VALUE.value in util.context.param
-        ) {
-            return util.context.param[args.VALUE.value];
+    argumentReporterBoolean (args, util) {
+        const value = util.getParam(args.VALUE.value);
+        if (value === null) {
+            // tw: implement is compiled? and is turbowarp?
+            const lowercaseValue = String(args.VALUE.value).toLowerCase();
+            if (util.target.runtime.compilerOptions.enabled && lowercaseValue === 'is compiled?') {
+                return true;
+            }
+            if (lowercaseValue === 'is turbowarp?') {
+                return true;
+            }
+            // When the parameter is not found in the most recent procedure
+            // call, the default is always 0.
+            return 0;
         }
-        // tw: implement is compiled? and is turbowarp?
-        const lowercaseValue = String(args.VALUE.value).toLowerCase();
-        if (
-            util.target.runtime.compilerOptions.enabled &&
-            lowercaseValue === 'is compiled?'
-        ) {
-            return true;
-        }
-        if (lowercaseValue === 'is turbowarp?') {
-            return true;
-        }
-        // When the parameter is not found in the most recent procedure
-        // call, the default is always 0.
-        return 0;
+        return value;
     }
 }
 

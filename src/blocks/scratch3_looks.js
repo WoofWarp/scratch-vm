@@ -81,7 +81,7 @@ class Scratch3LooksBlocks {
      * Limit for ghost effect
      * @const {object}
      */
-    static get EFFECT_GHOST_LIMIT (){
+    static get EFFECT_GHOST_LIMIT () {
         return {min: 0, max: 100};
     }
 
@@ -89,7 +89,7 @@ class Scratch3LooksBlocks {
      * Limit for brightness effect
      * @const {object}
      */
-    static get EFFECT_BRIGHTNESS_LIMIT (){
+    static get EFFECT_BRIGHTNESS_LIMIT () {
         return {min: -100, max: 100};
     }
 
@@ -101,7 +101,9 @@ class Scratch3LooksBlocks {
     _getBubbleState (target) {
         let bubbleState = target.getCustomState(Scratch3LooksBlocks.STATE_KEY);
         if (!bubbleState) {
-            bubbleState = Clone.simple(Scratch3LooksBlocks.DEFAULT_BUBBLE_STATE);
+            bubbleState = Clone.simple(
+                Scratch3LooksBlocks.DEFAULT_BUBBLE_STATE
+            );
             target.setCustomState(Scratch3LooksBlocks.STATE_KEY, bubbleState);
         }
         return bubbleState;
@@ -127,7 +129,10 @@ class Scratch3LooksBlocks {
     _onTargetWillExit (target) {
         const bubbleState = this._getBubbleState(target);
         if (bubbleState.drawableId && bubbleState.skinId) {
-            this.runtime.renderer.destroyDrawable(bubbleState.drawableId, StageLayering.SPRITE_LAYER);
+            this.runtime.renderer.destroyDrawable(
+                bubbleState.drawableId,
+                StageLayering.SPRITE_LAYER
+            );
             this.runtime.renderer.destroySkin(bubbleState.skinId);
             bubbleState.drawableId = null;
             bubbleState.skinId = null;
@@ -157,7 +162,8 @@ class Scratch3LooksBlocks {
     _positionBubble (target) {
         if (!target.visible) return;
         const bubbleState = this._getBubbleState(target);
-        const [bubbleWidth, bubbleHeight] = this.runtime.renderer.getCurrentSkinSize(bubbleState.drawableId);
+        const [bubbleWidth, bubbleHeight] =
+            this.runtime.renderer.getCurrentSkinSize(bubbleState.drawableId);
         let targetBounds;
         try {
             targetBounds = target.getBoundsForBubble();
@@ -178,30 +184,48 @@ class Scratch3LooksBlocks {
             top: stageSize[1] / 2,
             bottom: -stageSize[1] / 2
         };
-        if (bubbleState.onSpriteRight && bubbleWidth + targetBounds.right > stageBounds.right &&
-            (targetBounds.left - bubbleWidth > stageBounds.left)) { // Only flip if it would fit
+        if (
+            bubbleState.onSpriteRight &&
+            bubbleWidth + targetBounds.right > stageBounds.right &&
+            targetBounds.left - bubbleWidth > stageBounds.left
+        ) {
+            // Only flip if it would fit
             bubbleState.onSpriteRight = false;
             this._renderBubble(target);
-        } else if (!bubbleState.onSpriteRight && targetBounds.left - bubbleWidth < stageBounds.left &&
-            (bubbleWidth + targetBounds.right < stageBounds.right)) { // Only flip if it would fit
+        } else if (
+            !bubbleState.onSpriteRight &&
+            targetBounds.left - bubbleWidth < stageBounds.left &&
+            bubbleWidth + targetBounds.right < stageBounds.right
+        ) {
+            // Only flip if it would fit
             bubbleState.onSpriteRight = true;
             this._renderBubble(target);
         } else {
-            this.runtime.renderer.updateDrawablePosition(bubbleState.drawableId, [
-                bubbleState.onSpriteRight ? (
-                    Math.max(
-                        stageBounds.left, // Bubble should not extend past left edge of stage
-                        Math.min(stageBounds.right - bubbleWidth, targetBounds.right)
-                    )
-                ) : (
+            this.runtime.renderer.updateDrawablePosition(
+                bubbleState.drawableId,
+                [
+                    bubbleState.onSpriteRight ?
+                        Math.max(
+                            stageBounds.left, // Bubble should not extend past left edge of stage
+                            Math.min(
+                                stageBounds.right - bubbleWidth,
+                                targetBounds.right
+                            )
+                        ) :
+                        Math.min(
+                            stageBounds.right - bubbleWidth, // Bubble should not extend past right edge of stage
+                            Math.max(
+                                stageBounds.left,
+                                targetBounds.left - bubbleWidth
+                            )
+                        ),
+                    // Bubble should not extend past the top of the stage
                     Math.min(
-                        stageBounds.right - bubbleWidth, // Bubble should not extend past right edge of stage
-                        Math.max(stageBounds.left, targetBounds.left - bubbleWidth)
+                        stageBounds.top,
+                        targetBounds.bottom + bubbleHeight
                     )
-                ),
-                // Bubble should not extend past the top of the stage
-                Math.min(stageBounds.top, targetBounds.bottom + bubbleHeight)
-            ]);
+                ]
+            );
             this.runtime.requestRedraw();
         }
     }
@@ -214,7 +238,8 @@ class Scratch3LooksBlocks {
      * @return {undefined} Early return if text is empty string.
      * @private
      */
-    _renderBubble (target) { // used by compiler
+    _renderBubble (target) {
+        // used by compiler
         if (!this.runtime.renderer) return;
 
         const bubbleState = this._getBubbleState(target);
@@ -227,12 +252,28 @@ class Scratch3LooksBlocks {
         }
 
         if (bubbleState.skinId) {
-            this.runtime.renderer.updateTextSkin(bubbleState.skinId, type, text, onSpriteRight, [0, 0]);
+            this.runtime.renderer.updateTextSkin(
+                bubbleState.skinId,
+                type,
+                text,
+                onSpriteRight,
+                [0, 0]
+            );
         } else {
             target.onTargetVisualChange = this._onTargetChanged;
-            bubbleState.drawableId = this.runtime.renderer.createDrawable(StageLayering.SPRITE_LAYER);
-            bubbleState.skinId = this.runtime.renderer.createTextSkin(type, text, bubbleState.onSpriteRight, [0, 0]);
-            this.runtime.renderer.updateDrawableSkinId(bubbleState.drawableId, bubbleState.skinId);
+            bubbleState.drawableId = this.runtime.renderer.createDrawable(
+                StageLayering.SPRITE_LAYER
+            );
+            bubbleState.skinId = this.runtime.renderer.createTextSkin(
+                type,
+                text,
+                bubbleState.onSpriteRight,
+                [0, 0]
+            );
+            this.runtime.renderer.updateDrawableSkinId(
+                bubbleState.drawableId,
+                bubbleState.skinId
+            );
         }
 
         this._positionBubble(target);
@@ -250,8 +291,11 @@ class Scratch3LooksBlocks {
         // Non-integers should be rounded to 2 decimal places (no more, no less), unless they're small enough that
         // rounding would display them as 0.00. This matches 2.0's behavior:
         // https://github.com/scratchfoundation/scratch-flash/blob/2e4a402ceb205a042887f54b26eebe1c2e6da6c0/src/scratch/ScratchSprite.as#L579-L585
-        if (typeof text === 'number' &&
-            Math.abs(text) >= 0.01 && text % 1 !== 0) {
+        if (
+            typeof text === 'number' &&
+            Math.abs(text) >= 0.01 &&
+            text % 1 !== 0
+        ) {
             text = text.toFixed(2);
         }
 
@@ -318,10 +362,15 @@ class Scratch3LooksBlocks {
             },
             looks_costumenumbername: {
                 isSpriteSpecific: true,
-                getId: (targetId, fields) => getMonitorIdForBlockWithArgs(`${targetId}_costumenumbername`, fields)
+                getId: (targetId, fields) =>
+                    getMonitorIdForBlockWithArgs(
+                        `${targetId}_costumenumbername`,
+                        fields
+                    )
             },
             looks_backdropnumbername: {
-                getId: (_, fields) => getMonitorIdForBlockWithArgs('backdropnumbername', fields)
+                getId: (_, fields) =>
+                    getMonitorIdForBlockWithArgs('backdropnumbername', fields)
             }
         };
     }
@@ -331,8 +380,14 @@ class Scratch3LooksBlocks {
         const message = yield* args.MESSAGE();
         this._say(message, util.target);
     }
-    _say (message, target) { // used by compiler
-        this.runtime.emit(Scratch3LooksBlocks.SAY_OR_THINK, target, 'say', message);
+    _say (message, target) {
+        // used by compiler
+        this.runtime.emit(
+            Scratch3LooksBlocks.SAY_OR_THINK,
+            target,
+            'say',
+            message
+        );
     }
 
     *sayforsecs (args, util) {
@@ -353,7 +408,12 @@ class Scratch3LooksBlocks {
     }
 
     *think (args, util) {
-        this.runtime.emit(Scratch3LooksBlocks.SAY_OR_THINK, util.target, 'think', yield* args.MESSAGE());
+        this.runtime.emit(
+            Scratch3LooksBlocks.SAY_OR_THINK,
+            util.target,
+            'think',
+            yield* args.MESSAGE()
+        );
     }
 
     *thinkforsecs (args, util) {
@@ -373,12 +433,12 @@ class Scratch3LooksBlocks {
         });
     }
 
-    *show (args, util) {
+    show (args, util) {
         util.target.setVisible(true);
         this._renderBubble(util.target);
     }
 
-    *hide (args, util) {
+    hide (args, util) {
         util.target.setVisible(false);
         this._renderBubble(util.target);
     }
@@ -391,13 +451,18 @@ class Scratch3LooksBlocks {
      * @param {boolean=} optZeroIndex Set to zero-index the requestedCostume.
      * @return {Array.<!Thread>} Any threads started by this switch.
      */
-    _setCostume (target, requestedCostume, optZeroIndex) { // used by compiler
+    _setCostume (target, requestedCostume, optZeroIndex) {
+        // used by compiler
         if (typeof requestedCostume === 'number') {
             // Numbers should be treated as costume indices, always
-            target.setCostume(optZeroIndex ? requestedCostume : requestedCostume - 1);
+            target.setCostume(
+                optZeroIndex ? requestedCostume : requestedCostume - 1
+            );
         } else {
             // Strings should be treated as costume names, where possible
-            const costumeIndex = target.getCostumeIndexByName(requestedCostume.toString());
+            const costumeIndex = target.getCostumeIndexByName(
+                requestedCostume.toString()
+            );
 
             if (costumeIndex !== -1) {
                 target.setCostume(costumeIndex);
@@ -405,11 +470,20 @@ class Scratch3LooksBlocks {
                 target.setCostume(target.currentCostume + 1);
             } else if (requestedCostume === 'previous costume') {
                 target.setCostume(target.currentCostume - 1);
-            // Try to cast the string to a number (and treat it as a costume index)
-            // Pure whitespace should not be treated as a number
-            // Note: isNaN will cast the string to a number before checking if it's NaN
-            } else if (!(isNaN(requestedCostume) || Cast.isWhiteSpace(requestedCostume))) {
-                target.setCostume(optZeroIndex ? Number(requestedCostume) : Number(requestedCostume) - 1);
+                // Try to cast the string to a number (and treat it as a costume index)
+                // Pure whitespace should not be treated as a number
+                // Note: isNaN will cast the string to a number before checking if it's NaN
+            } else if (
+                !(
+                    isNaN(requestedCostume) ||
+                    Cast.isWhiteSpace(requestedCostume)
+                )
+            ) {
+                target.setCostume(
+                    optZeroIndex ?
+                        Number(requestedCostume) :
+                        Number(requestedCostume) - 1
+                );
             }
         }
 
@@ -425,13 +499,18 @@ class Scratch3LooksBlocks {
      * @param {boolean=} optZeroIndex Set to zero-index the requestedBackdrop.
      * @return {Array.<!Thread>} Any threads started by this switch.
      */
-    _setBackdrop (stage, requestedBackdrop, optZeroIndex) { // used by compiler
+    _setBackdrop (stage, requestedBackdrop, optZeroIndex) {
+        // used by compiler
         if (typeof requestedBackdrop === 'number') {
             // Numbers should be treated as backdrop indices, always
-            stage.setCostume(optZeroIndex ? requestedBackdrop : requestedBackdrop - 1);
+            stage.setCostume(
+                optZeroIndex ? requestedBackdrop : requestedBackdrop - 1
+            );
         } else {
             // Strings should be treated as backdrop names where possible
-            const costumeIndex = stage.getCostumeIndexByName(requestedBackdrop.toString());
+            const costumeIndex = stage.getCostumeIndexByName(
+                requestedBackdrop.toString()
+            );
 
             if (costumeIndex !== -1) {
                 stage.setCostume(costumeIndex);
@@ -448,15 +527,28 @@ class Scratch3LooksBlocks {
                     const upperBound = numCostumes - 1;
                     const costumeToExclude = stage.currentCostume;
 
-                    const nextCostume = MathUtil.inclusiveRandIntWithout(lowerBound, upperBound, costumeToExclude);
+                    const nextCostume = MathUtil.inclusiveRandIntWithout(
+                        lowerBound,
+                        upperBound,
+                        costumeToExclude
+                    );
 
                     stage.setCostume(nextCostume);
                 }
-            // Try to cast the string to a number (and treat it as a costume index)
-            // Pure whitespace should not be treated as a number
-            // Note: isNaN will cast the string to a number before checking if it's NaN
-            } else if (!(isNaN(requestedBackdrop) || Cast.isWhiteSpace(requestedBackdrop))) {
-                stage.setCostume(optZeroIndex ? Number(requestedBackdrop) : Number(requestedBackdrop) - 1);
+                // Try to cast the string to a number (and treat it as a costume index)
+                // Pure whitespace should not be treated as a number
+                // Note: isNaN will cast the string to a number before checking if it's NaN
+            } else if (
+                !(
+                    isNaN(requestedBackdrop) ||
+                    Cast.isWhiteSpace(requestedBackdrop)
+                )
+            ) {
+                stage.setCostume(
+                    optZeroIndex ?
+                        Number(requestedBackdrop) :
+                        Number(requestedBackdrop) - 1
+                );
             }
         }
 
@@ -470,74 +562,62 @@ class Scratch3LooksBlocks {
         this._setCostume(util.target, yield* args.COSTUME()); // used by compiler
     }
 
-    *nextCostume (args, util) {
-        this._setCostume(
-            util.target, util.target.currentCostume + 1, true
-        );
+    nextCostume (args, util) {
+        this._setCostume(util.target, util.target.currentCostume + 1, true);
     }
 
     *switchBackdrop (args) {
-        this._setBackdrop(this.runtime.getTargetForStage(), yield* args.BACKDROP());
-    }
-
-    switchBackdropAndWait (args, util) {
-        // TODO: refactor
-        // Have we run before, starting threads?
-        if (!util.stackFrame.startedThreads) {
-            // No - switch the backdrop.
-            util.stackFrame.startedThreads = (
-                this._setBackdrop(
-                    this.runtime.getTargetForStage(),
-                    args.BACKDROP
-                )
-            );
-            if (util.stackFrame.startedThreads.length === 0) {
-                // Nothing was started.
-                return;
-            }
-        }
-        // We've run before; check if the wait is still going on.
-        const instance = this;
-        // Scratch 2 considers threads to be waiting if they are still in
-        // runtime.threads. Threads that have run all their blocks, or are
-        // marked done but still in runtime.threads are still considered to
-        // be waiting.
-        const waiting = util.stackFrame.startedThreads
-            .some(thread => instance.runtime.threads.indexOf(thread) !== -1);
-        if (waiting) {
-            // If all threads are waiting for the next tick or later yield
-            // for a tick as well. Otherwise yield until the next loop of
-            // the threads.
-            if (
-                util.stackFrame.startedThreads
-                    .every(thread => instance.runtime.isWaitingThread(thread))
-            ) {
-                util.yieldTick();
-            } else {
-                util.yield();
-            }
-        }
-    }
-
-    *nextBackdrop () {
-        const stage = this.runtime.getTargetForStage();
         this._setBackdrop(
-            stage, stage.currentCostume + 1, true
+            this.runtime.getTargetForStage(),
+            yield* args.BACKDROP()
         );
     }
 
-    clampEffect (effect, value) { // used by compiler
+    *switchBackdropAndWait (args, util) {
+        const startedThreads = this._setBackdrop(
+            this.runtime.getTargetForStage(),
+            args.BACKDROP
+        );
+        if (startedThreads.length === 0) return;
+        while (
+            startedThreads.some(
+                thread => this.runtime.threads.indexOf(thread) !== -1
+            )
+        ) {
+            if (
+                startedThreads.every(thread =>
+                    this.runtime.isWaitingThread(thread)
+                )
+            ) {
+                yield util.yieldTick();
+            } else {
+                yield util.yield();
+            }
+        }
+    }
+
+    nextBackdrop () {
+        const stage = this.runtime.getTargetForStage();
+        this._setBackdrop(stage, stage.currentCostume + 1, true);
+    }
+
+    clampEffect (effect, value) {
+        // used by compiler
         let clampedValue = value;
         switch (effect) {
         case 'ghost':
-            clampedValue = MathUtil.clamp(value,
+            clampedValue = MathUtil.clamp(
+                value,
                 Scratch3LooksBlocks.EFFECT_GHOST_LIMIT.min,
-                Scratch3LooksBlocks.EFFECT_GHOST_LIMIT.max);
+                Scratch3LooksBlocks.EFFECT_GHOST_LIMIT.max
+            );
             break;
         case 'brightness':
-            clampedValue = MathUtil.clamp(value,
+            clampedValue = MathUtil.clamp(
+                value,
                 Scratch3LooksBlocks.EFFECT_BRIGHTNESS_LIMIT.min,
-                Scratch3LooksBlocks.EFFECT_BRIGHTNESS_LIMIT.max);
+                Scratch3LooksBlocks.EFFECT_BRIGHTNESS_LIMIT.max
+            );
             break;
         }
         return clampedValue;
@@ -546,7 +626,9 @@ class Scratch3LooksBlocks {
     *changeEffect (args, util) {
         const effect = Cast.toString(args.EFFECT.value).toLowerCase();
         const change = Cast.toNumber(yield* args.CHANGE());
-        if (!Object.prototype.hasOwnProperty.call(util.target.effects, effect)) return;
+        if (!Object.prototype.hasOwnProperty.call(util.target.effects, effect)) {
+            return;
+        }
         let newValue = change + util.target.effects[effect];
         newValue = this.clampEffect(effect, newValue);
         util.target.setEffect(effect, newValue);
@@ -559,7 +641,7 @@ class Scratch3LooksBlocks {
         util.target.setEffect(effect, value);
     }
 
-    *clearEffects (args, util) {
+    clearEffects (args, util) {
         util.target.clearEffects();
     }
 
@@ -573,7 +655,7 @@ class Scratch3LooksBlocks {
         util.target.setSize(size);
     }
 
-    *goToFrontBack (args, util) {
+    goToFrontBack (args, util) {
         if (!util.target.isStage) {
             if (args.FRONT_BACK.value === 'front') {
                 util.target.goToFront();
@@ -593,11 +675,11 @@ class Scratch3LooksBlocks {
         }
     }
 
-    *getSize (args, util) {
+    getSize (args, util) {
         return Math.round(util.target.size);
     }
 
-    *getBackdropNumberName (args) {
+    getBackdropNumberName (args) {
         const stage = this.runtime.getTargetForStage();
         if (args.NUMBER_NAME.value === 'number') {
             return stage.currentCostume + 1;
@@ -606,7 +688,7 @@ class Scratch3LooksBlocks {
         return stage.getCostumes()[stage.currentCostume].name;
     }
 
-    *getCostumeNumberName (args, util) {
+    getCostumeNumberName (args, util) {
         if (args.NUMBER_NAME.value === 'number') {
             return util.target.currentCostume + 1;
         }

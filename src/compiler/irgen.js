@@ -615,12 +615,15 @@ class ScriptTreeGenerator {
             return {
                 kind: 'mouse.y'
             };
-        case 'sensing_of':
+        case 'sensing_of': {
+            const object = this.descendInputOfBlock(block, 'OBJECT');
+            this.script.yields = this.script.yields || object.kind !== 'constant'
             return {
                 kind: 'sensing.of',
                 property: block.fields.PROPERTY.value,
-                object: this.descendInputOfBlock(block, 'OBJECT')
+                object
             };
+        }
         case 'sensing_timer':
             this.usesTimer = true;
             return {
@@ -1403,28 +1406,23 @@ class ScriptTreeGenerator {
 
         const inputs = {};
         for (const name of Object.keys(block.inputs)) {
-            if (!name.startsWith('SUBSTACK')) {
+            if (name.startsWith('SUBSTACK')) {
+                inputs[name] = {
+                    kind: 'substack',
+                    value: this.descendStackedBlock(block, name)
+                };
+            } else {
                 inputs[name] = this.descendInputOfBlock(block, name);
             }
         }
 
         const fields = {};
         for (const name of Object.keys(block.fields)) {
-            fields[name] = block.fields[name].value;
+            fields[name] = block.fields[name];
         }
 
         const blockInfo = this.getBlockInfo(block.opcode);
         const blockType = (blockInfo && blockInfo.info && blockInfo.info.blockType) || BlockType.COMMAND;
-        const substacks = {};
-        if (blockType === BlockType.CONDITIONAL || blockType === BlockType.LOOP) {
-            for (const inputName in block.inputs) {
-                if (!inputName.startsWith('SUBSTACK')) continue;
-                const branchNum = inputName === 'SUBSTACK' ? 1 : +inputName.substring('SUBSTACK'.length);
-                if (!isNaN(branchNum)) {
-                    substacks[branchNum] = this.descendSubstack(block, inputName);
-                }
-            }
-        }
 
         return {
             kind: 'compat',
@@ -1432,8 +1430,7 @@ class ScriptTreeGenerator {
             opcode: block.opcode,
             blockType,
             inputs,
-            fields,
-            substacks
+            fields
         };
     }
 

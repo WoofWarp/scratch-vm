@@ -139,7 +139,7 @@ class Sequencer {
                         this.runtime.profiler.increment(stepThreadProfilerId);
                     }
                     this.stepThread(activeThread);
-                    if (activeThread.warpTimer) activeThread.warpTimer.startTime = Timer.nowObj.now();
+                    // if (activeThread.warpTimer) activeThread.warpTimer.startTime = Timer.nowObj.now();
                 }
                 if (activeThread.status === Thread.STATUS_RUNNING) {
                     numActiveThreads++;

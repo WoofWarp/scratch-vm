@@ -166,12 +166,14 @@ class Scratch3SoundBlocks {
     *playSound (args, util) {
         // Don't return the promise, it's the only difference for AndWait
         this._playSound({
-            SOUND_MENU: yield* args.SOUND_MENU
+            SOUND_MENU: yield* args.SOUND_MENU()
         }, util);
     }
 
     *playSoundAndWait (args, util) {
-        return this._playSound(args, util, STORE_WAITING);
+        return yield this._playSound({
+            SOUND_MENU: yield* args.SOUND_MENU()
+        }, util, STORE_WAITING);
     }
 
     _playSound (args, util, storeWaiting) {
@@ -239,7 +241,7 @@ class Scratch3SoundBlocks {
         return -1;
     }
 
-    *stopAllSounds () {
+    stopAllSounds () {
         if (this.runtime.targets === null) return;
         const allTargets = this.runtime.targets;
         for (let i = 0; i < allTargets.length; i++) {
@@ -268,15 +270,15 @@ class Scratch3SoundBlocks {
     }
 
     *setEffect (args, util) {
-        return this._updateEffect({
-            EFFECT: yield* args.EFFECT(),
+        return yield this._updateEffect({
+            EFFECT: args.EFFECT.value,
             VALUE: yield* args.VALUE()
         }, util, false);
     }
 
     *changeEffect (args, util) {
-        return this._updateEffect({
-            EFFECT: yield* args.EFFECT(),
+        return yield this._updateEffect({
+            EFFECT: args.EFFECT.value,
             VALUE: yield* args.VALUE()
         }, util, true);
     }
@@ -318,7 +320,7 @@ class Scratch3SoundBlocks {
         target.sprite.soundBank.setEffects(target);
     }
 
-    *clearEffects (args, util) {
+    clearEffects (args, util) {
         this._clearEffectsForTarget(util.target);
     }
 
@@ -361,19 +363,19 @@ class Scratch3SoundBlocks {
         this.runtime.requestRedraw();
     }
 
-    *getVolume (args, util) {
+    getVolume (args, util) {
         return util.target.volume;
     }
 
-    *soundsMenu (args) {
+    soundsMenu (args) {
         return args.SOUND_MENU.value;
     }
 
-    *beatsMenu (args) {
+    beatsMenu (args) {
         return args.BEATS.value;
     }
 
-    *effectsMenu (args) {
+    effectsMenu (args) {
         return args.EFFECT.value;
     }
 }

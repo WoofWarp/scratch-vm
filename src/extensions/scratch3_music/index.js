@@ -4,7 +4,6 @@ const Clone = require('../../util/clone');
 const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const MathUtil = require('../../util/math-util');
-const Timer = require('../../util/timer');
 
 /**
  * The instrument and drum sounds, loaded as static assets.
@@ -22,14 +21,16 @@ try {
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const blockIconURI = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PHRpdGxlPm11c2ljLWJsb2NrLWljb248L3RpdGxlPjxkZWZzPjxwYXRoIGQ9Ik0zMi4xOCAyNS44NzRDMzIuNjM2IDI4LjE1NyAzMC41MTIgMzAgMjcuNDMzIDMwYy0zLjA3IDAtNS45MjMtMS44NDMtNi4zNzItNC4xMjYtLjQ1OC0yLjI4NSAxLjY2NS00LjEzNiA0Ljc0My00LjEzNi42NDcgMCAxLjI4My4wODQgMS44OS4yMzQuMzM4LjA4Ni42MzcuMTguOTM4LjMwMi44Ny0uMDItLjEwNC0yLjI5NC0xLjgzNS0xMi4yMy0yLjEzNC0xMi4zMDIgMy4wNi0xLjg3IDguNzY4LTIuNzUyIDUuNzA4LS44ODUuMDc2IDQuODItMy42NSAzLjg0NC0zLjcyNC0uOTg3LTQuNjUtNy4xNTMuMjYzIDE0LjczOHptLTE2Ljk5OCA1Ljk5QzE1LjYzIDM0LjE0OCAxMy41MDcgMzYgMTAuNDQgMzZjLTMuMDcgMC01LjkyMi0xLjg1Mi02LjM4LTQuMTM2LS40NDgtMi4yODQgMS42NzQtNC4xMzUgNC43NS00LjEzNSAxLjAwMyAwIDEuOTc1LjE5NiAyLjg1NS41NDMuODIyLS4wNTUtLjE1LTIuMzc3LTEuODYyLTEyLjIyOC0yLjEzMy0xMi4zMDMgMy4wNi0xLjg3IDguNzY0LTIuNzUzIDUuNzA2LS44OTQuMDc2IDQuODItMy42NDggMy44MzQtMy43MjQtLjk4Ny00LjY1LTcuMTUyLjI2MiAxNC43Mzh6IiBpZD0iYSIvPjwvZGVmcz48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjx1c2UgZmlsbD0iI0ZGRiIgeGxpbms6aHJlZj0iI2EiLz48cGF0aCBzdHJva2Utb3BhY2l0eT0iLjEiIHN0cm9rZT0iIzAwMCIgZD0iTTI4LjQ1NiAyMS42NzVjLS4wMS0uMzEyLS4wODctLjgyNS0uMjU2LTEuNzAyLS4wOTYtLjQ5NS0uNjEyLTMuMDIyLS43NTMtMy43My0uMzk1LTEuOTgtLjc2LTMuOTItMS4xNDItNi4xMTMtLjczMi00LjIyMy0uNjkzLTYuMDUuMzQ0LTYuNTI3LjUtLjIzIDEuMDYtLjA4IDEuODQuMzUuNDE0LjIyNyAyLjE4MiAxLjM2NSAyLjA3IDEuMjk2IDEuOTk0IDEuMjQyIDMuNDY0IDEuNzc0IDQuOTMgMS41NDggMS41MjYtLjIzNyAyLjUwNC0uMDYgMi44NzYuNjE4LjM0OC42MzUuMDE1IDEuNDE2LS43MyAyLjE4LTEuNDcyIDEuNTE2LTMuOTc1IDIuNTE0LTUuODQ4IDIuMDIzLS44MjItLjIyLTEuMjM4LS40NjUtMi4zOC0xLjI2N2wtLjA5NS0uMDY2Yy4wNDcuNTkzLjI2NCAxLjc0LjcxNyAzLjgwMy4yOTQgMS4zMzYgMi4wOCA5LjE4NyAyLjYzNyAxMS42NzRsLjAwMi4wMTJjLjUyOCAyLjYzNy0xLjg3MyA0LjcyNC01LjIzNiA0LjcyNC0zLjI5IDAtNi4zNjMtMS45ODgtNi44NjItNC41MjgtLjUzLTIuNjQgMS44NzMtNC43MzQgNS4yMzMtNC43MzQuNjcyIDAgMS4zNDcuMDg1IDIuMDE0LjI1LjIyNy4wNTcuNDM2LjExOC42MzYuMTg3em0tMTYuOTk2IDUuOTljLS4wMS0uMzE4LS4wOS0uODM4LS4yNjYtMS43MzctLjA5LS40Ni0uNTk1LTIuOTM3LS43NTMtMy43MjctLjM5LTEuOTYtLjc1LTMuODktMS4xMy02LjA3LS43MzItNC4yMjMtLjY5Mi02LjA1LjM0NC02LjUyNi41MDItLjIzIDEuMDYtLjA4MiAxLjg0LjM1LjQxNS4yMjcgMi4xODIgMS4zNjQgMi4wNyAxLjI5NSAxLjk5MyAxLjI0MiAzLjQ2MiAxLjc3NCA0LjkyNiAxLjU0OCAxLjUyNS0uMjQgMi41MDQtLjA2NCAyLjg3Ni42MTQuMzQ4LjYzNS4wMTUgMS40MTUtLjcyOCAyLjE4LTEuNDc0IDEuNTE3LTMuOTc3IDIuNTEzLTUuODQ3IDIuMDE3LS44Mi0uMjItMS4yMzYtLjQ2NC0yLjM3OC0xLjI2N2wtLjA5NS0uMDY1Yy4wNDcuNTkzLjI2NCAxLjc0LjcxNyAzLjgwMi4yOTQgMS4zMzcgMi4wNzggOS4xOSAyLjYzNiAxMS42NzVsLjAwMy4wMTNjLjUxNyAyLjYzOC0xLjg4NCA0LjczMi01LjIzNCA0LjczMi0zLjI4NyAwLTYuMzYtMS45OTMtNi44Ny00LjU0LS41Mi0yLjY0IDEuODg0LTQuNzMgNS4yNC00LjczLjkwNSAwIDEuODAzLjE1IDIuNjUuNDM2eiIvPjwvZz48L3N2Zz4=';
+const blockIconURI =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PHRpdGxlPm11c2ljLWJsb2NrLWljb248L3RpdGxlPjxkZWZzPjxwYXRoIGQ9Ik0zMi4xOCAyNS44NzRDMzIuNjM2IDI4LjE1NyAzMC41MTIgMzAgMjcuNDMzIDMwYy0zLjA3IDAtNS45MjMtMS44NDMtNi4zNzItNC4xMjYtLjQ1OC0yLjI4NSAxLjY2NS00LjEzNiA0Ljc0My00LjEzNi42NDcgMCAxLjI4My4wODQgMS44OS4yMzQuMzM4LjA4Ni42MzcuMTguOTM4LjMwMi44Ny0uMDItLjEwNC0yLjI5NC0xLjgzNS0xMi4yMy0yLjEzNC0xMi4zMDIgMy4wNi0xLjg3IDguNzY4LTIuNzUyIDUuNzA4LS44ODUuMDc2IDQuODItMy42NSAzLjg0NC0zLjcyNC0uOTg3LTQuNjUtNy4xNTMuMjYzIDE0LjczOHptLTE2Ljk5OCA1Ljk5QzE1LjYzIDM0LjE0OCAxMy41MDcgMzYgMTAuNDQgMzZjLTMuMDcgMC01LjkyMi0xLjg1Mi02LjM4LTQuMTM2LS40NDgtMi4yODQgMS42NzQtNC4xMzUgNC43NS00LjEzNSAxLjAwMyAwIDEuOTc1LjE5NiAyLjg1NS41NDMuODIyLS4wNTUtLjE1LTIuMzc3LTEuODYyLTEyLjIyOC0yLjEzMy0xMi4zMDMgMy4wNi0xLjg3IDguNzY0LTIuNzUzIDUuNzA2LS44OTQuMDc2IDQuODItMy42NDggMy44MzQtMy43MjQtLjk4Ny00LjY1LTcuMTUyLjI2MiAxNC43Mzh6IiBpZD0iYSIvPjwvZGVmcz48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjx1c2UgZmlsbD0iI0ZGRiIgeGxpbms6aHJlZj0iI2EiLz48cGF0aCBzdHJva2Utb3BhY2l0eT0iLjEiIHN0cm9rZT0iIzAwMCIgZD0iTTI4LjQ1NiAyMS42NzVjLS4wMS0uMzEyLS4wODctLjgyNS0uMjU2LTEuNzAyLS4wOTYtLjQ5NS0uNjEyLTMuMDIyLS43NTMtMy43My0uMzk1LTEuOTgtLjc2LTMuOTItMS4xNDItNi4xMTMtLjczMi00LjIyMy0uNjkzLTYuMDUuMzQ0LTYuNTI3LjUtLjIzIDEuMDYtLjA4IDEuODQuMzUuNDE0LjIyNyAyLjE4MiAxLjM2NSAyLjA3IDEuMjk2IDEuOTk0IDEuMjQyIDMuNDY0IDEuNzc0IDQuOTMgMS41NDggMS41MjYtLjIzNyAyLjUwNC0uMDYgMi44NzYuNjE4LjM0OC42MzUuMDE1IDEuNDE2LS43MyAyLjE4LTEuNDcyIDEuNTE2LTMuOTc1IDIuNTE0LTUuODQ4IDIuMDIzLS44MjItLjIyLTEuMjM4LS40NjUtMi4zOC0xLjI2N2wtLjA5NS0uMDY2Yy4wNDcuNTkzLjI2NCAxLjc0LjcxNyAzLjgwMy4yOTQgMS4zMzYgMi4wOCA5LjE4NyAyLjYzNyAxMS42NzRsLjAwMi4wMTJjLjUyOCAyLjYzNy0xLjg3MyA0LjcyNC01LjIzNiA0LjcyNC0zLjI5IDAtNi4zNjMtMS45ODgtNi44NjItNC41MjgtLjUzLTIuNjQgMS44NzMtNC43MzQgNS4yMzMtNC43MzQuNjcyIDAgMS4zNDcuMDg1IDIuMDE0LjI1LjIyNy4wNTcuNDM2LjExOC42MzYuMTg3em0tMTYuOTk2IDUuOTljLS4wMS0uMzE4LS4wOS0uODM4LS4yNjYtMS43MzctLjA5LS40Ni0uNTk1LTIuOTM3LS43NTMtMy43MjctLjM5LTEuOTYtLjc1LTMuODktMS4xMy02LjA3LS43MzItNC4yMjMtLjY5Mi02LjA1LjM0NC02LjUyNi41MDItLjIzIDEuMDYtLjA4MiAxLjg0LjM1LjQxNS4yMjcgMi4xODIgMS4zNjQgMi4wNyAxLjI5NSAxLjk5MyAxLjI0MiAzLjQ2MiAxLjc3NCA0LjkyNiAxLjU0OCAxLjUyNS0uMjQgMi41MDQtLjA2NCAyLjg3Ni42MTQuMzQ4LjYzNS4wMTUgMS40MTUtLjcyOCAyLjE4LTEuNDc0IDEuNTE3LTMuOTc3IDIuNTEzLTUuODQ3IDIuMDE3LS44Mi0uMjItMS4yMzYtLjQ2NC0yLjM3OC0xLjI2N2wtLjA5NS0uMDY1Yy4wNDcuNTkzLjI2NCAxLjc0LjcxNyAzLjgwMi4yOTQgMS4zMzcgMi4wNzggOS4xOSAyLjYzNiAxMS42NzVsLjAwMy4wMTNjLjUxNyAyLjYzOC0xLjg4NCA0LjczMi01LjIzNCA0LjczMi0zLjI4NyAwLTYuMzYtMS45OTMtNi44Ny00LjU0LS41Mi0yLjY0IDEuODg0LTQuNzMgNS4yNC00LjczLjkwNSAwIDEuODAzLjE1IDIuNjUuNDM2eiIvPjwvZz48L3N2Zz4=';
 
 /**
  * Icon svg to be displayed in the category menu, encoded as a data URI.
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const menuIconURI = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjA5IDEyLjkzN2MuMjI4IDEuMTQxLS44MzMgMi4wNjMtMi4zNzMgMi4wNjMtMS41MzUgMC0yLjk2Mi0uOTIyLTMuMTg2LTIuMDYzLS4yMy0xLjE0Mi44MzMtMi4wNjggMi4zNzItMi4wNjguMzIzIDAgLjY0MS4wNDIuOTQ1LjExN2EzLjUgMy41IDAgMCAxIC40NjguMTUxYy40MzUtLjAxLS4wNTItMS4xNDctLjkxNy02LjExNC0xLjA2Ny02LjE1MiAxLjUzLS45MzUgNC4zODQtMS4zNzcgMi44NTQtLjQ0Mi4wMzggMi40MS0xLjgyNSAxLjkyMi0xLjg2Mi0uNDkzLTIuMzI1LTMuNTc3LjEzMiA3LjM3ek03LjQ2IDguNTYzYy0xLjg2Mi0uNDkzLTIuMzI1LTMuNTc2LjEzIDcuMzdDNy44MTYgMTcuMDczIDYuNzU0IDE4IDUuMjIgMThjLTEuNTM1IDAtMi45NjEtLjkyNi0zLjE5LTIuMDY4LS4yMjQtMS4xNDIuODM3LTIuMDY3IDIuMzc1LTIuMDY3LjUwMSAwIC45ODcuMDk4IDEuNDI3LjI3Mi40MTItLjAyOC0uMDc0LTEuMTg5LS45My02LjExNEMzLjgzNCAxLjg3IDYuNDMgNy4wODcgOS4yODIgNi42NDZjMi44NTQtLjQ0Ny4wMzggMi40MS0xLjgyMyAxLjkxN3oiIGZpbGw9IiM1NzVFNzUiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==';
+const menuIconURI =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjA5IDEyLjkzN2MuMjI4IDEuMTQxLS44MzMgMi4wNjMtMi4zNzMgMi4wNjMtMS41MzUgMC0yLjk2Mi0uOTIyLTMuMTg2LTIuMDYzLS4yMy0xLjE0Mi44MzMtMi4wNjggMi4zNzItMi4wNjguMzIzIDAgLjY0MS4wNDIuOTQ1LjExN2EzLjUgMy41IDAgMCAxIC40NjguMTUxYy40MzUtLjAxLS4wNTItMS4xNDctLjkxNy02LjExNC0xLjA2Ny02LjE1MiAxLjUzLS45MzUgNC4zODQtMS4zNzcgMi44NTQtLjQ0Mi4wMzggMi40MS0xLjgyNSAxLjkyMi0xLjg2Mi0uNDkzLTIuMzI1LTMuNTc3LjEzMiA3LjM3ek03LjQ2IDguNTYzYy0xLjg2Mi0uNDkzLTIuMzI1LTMuNTc2LjEzIDcuMzdDNy44MTYgMTcuMDczIDYuNzU0IDE4IDUuMjIgMThjLTEuNTM1IDAtMi45NjEtLjkyNi0zLjE5LTIuMDY4LS4yMjQtMS4xNDIuODM3LTIuMDY3IDIuMzc1LTIuMDY3LjUwMSAwIC45ODcuMDk4IDEuNDI3LjI3Mi40MTItLjAyOC0uMDc0LTEuMTg5LS45My02LjExNEMzLjgzNCAxLjg3IDYuNDMgNy4wODcgOS4yODIgNi42NDZjMi44NTQtLjQ0Ny4wMzggMi40MS0xLjgyMyAxLjkxN3oiIGZpbGw9IiM1NzVFNzUiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==';
 
 /**
  * Class for the music-related blocks in Scratch 3.0
@@ -97,7 +98,11 @@ class Scratch3MusicBlocks {
         const loadingPromises = [];
         this.DRUM_INFO.forEach((drumInfo, index) => {
             const filePath = `drums/${drumInfo.fileName}`;
-            const promise = this._storeSound(filePath, index, this._drumPlayers);
+            const promise = this._storeSound(
+                filePath,
+                index,
+                this._drumPlayers
+            );
             loadingPromises.push(promise);
         });
         this.INSTRUMENT_INFO.forEach((instrumentInfo, instrumentIndex) => {
@@ -105,7 +110,11 @@ class Scratch3MusicBlocks {
             this._instrumentPlayerNoteArrays[instrumentIndex] = [];
             instrumentInfo.samples.forEach((sample, noteIndex) => {
                 const filePath = `instruments/${instrumentInfo.dirName}/${sample}`;
-                const promise = this._storeSound(filePath, noteIndex, this._instrumentPlayerArrays[instrumentIndex]);
+                const promise = this._storeSound(
+                    filePath,
+                    noteIndex,
+                    this._instrumentPlayerArrays[instrumentIndex]
+                );
                 loadingPromises.push(promise);
             });
         });
@@ -180,7 +189,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumSnare',
                     default: '(1) Snare Drum',
-                    description: 'Sound of snare drum as used in a standard drum kit'
+                    description:
+                        'Sound of snare drum as used in a standard drum kit'
                 }),
                 fileName: '1-snare'
             },
@@ -188,7 +198,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumBass',
                     default: '(2) Bass Drum',
-                    description: 'Sound of bass drum as used in a standard drum kit'
+                    description:
+                        'Sound of bass drum as used in a standard drum kit'
                 }),
                 fileName: '2-bass-drum'
             },
@@ -196,7 +207,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumSideStick',
                     default: '(3) Side Stick',
-                    description: 'Sound of a drum stick hitting the side of a drum (usually the snare)'
+                    description:
+                        'Sound of a drum stick hitting the side of a drum (usually the snare)'
                 }),
                 fileName: '3-side-stick'
             },
@@ -212,7 +224,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumOpenHiHat',
                     default: '(5) Open Hi-Hat',
-                    description: 'Sound of a drum stick hitting a hi-hat while open'
+                    description:
+                        'Sound of a drum stick hitting a hi-hat while open'
                 }),
                 fileName: '5-open-hi-hat'
             },
@@ -220,7 +233,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumClosedHiHat',
                     default: '(6) Closed Hi-Hat',
-                    description: 'Sound of a drum stick hitting a hi-hat while closed'
+                    description:
+                        'Sound of a drum stick hitting a hi-hat while closed'
                 }),
                 fileName: '6-closed-hi-hat'
             },
@@ -268,7 +282,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.drumTriangle',
                     default: '(12) Triangle',
-                    description: 'Sound of a triangle (instrument) being struck'
+                    description:
+                        'Sound of a triangle (instrument) being struck'
                 }),
                 fileName: '12-triangle'
             },
@@ -398,7 +413,8 @@ class Scratch3MusicBlocks {
                 name: formatMessage({
                     id: 'music.instrumentPizzicato',
                     default: '(7) Pizzicato',
-                    description: 'Sound of a string instrument (e.g. violin) being plucked'
+                    description:
+                        'Sound of a string instrument (e.g. violin) being plucked'
                 }),
                 dirName: '7-pizzicato',
                 releaseTime: 0.25,
@@ -559,11 +575,14 @@ class Scratch3MusicBlocks {
             // Reed Organ, Accordion, Harmonica, Tango Accordion
             3, 3, 3, 3,
             // Nylon String Guitar, Steel String Guitar, Electric Jazz Guitar, Electric Clean Guitar
-            4, 4, 5, 5,
+            4,
+            4, 5, 5,
             // Electric Muted Guitar, Overdriven Guitar,Distortion Guitar, Guitar Harmonics
-            5, 5, 5, 5,
+            5,
+            5, 5, 5,
             // Acoustic Bass, Electric Bass (finger), Electric Bass (pick), Fretless Bass
-            6, 6, 6, 6,
+            6,
+            6, 6, 6,
             // Slap Bass 1, Slap Bass 2, Synth Bass 1, Synth Bass 2
             6, 6, 6, 6,
             // Violin, Viola, Cello, Contrabass
@@ -571,7 +590,8 @@ class Scratch3MusicBlocks {
             // Tremolo Strings, Pizzicato Strings, Orchestral Strings, Timpani
             8, 7, 8, 19,
             // String Ensemble 1, String Ensemble 2, SynthStrings 1, SynthStrings 2
-            8, 8, 8, 8,
+            8,
+            8, 8, 8,
             // Choir Aahs, Voice Oohs, Synth Voice, Orchestra Hit
             15, 15, 15, 19,
             // Trumpet, Trombone, Tuba, Muted Trumpet
@@ -587,9 +607,11 @@ class Scratch3MusicBlocks {
             // Blown Bottle, Shakuhachi, Whistle, Ocarina
             13, 13, 12, 12,
             // Lead 1 (square), Lead 2 (sawtooth), Lead 3 (calliope), Lead 4 (chiff)
-            20, 20, 20, 20,
+            20,
+            20, 20, 20,
             // Lead 5 (charang), Lead 6 (voice), Lead 7 (fifths), Lead 8 (bass+lead)
-            20, 20, 20, 20,
+            20,
+            20, 20, 20,
             // Pad 1 (new age), Pad 2 (warm), Pad 3 (polysynth), Pad 4 (choir)
             21, 21, 21, 21,
             // Pad 5 (bowed), Pad 6 (metallic), Pad 7 (halo), Pad 8 (sweep)
@@ -744,9 +766,14 @@ class Scratch3MusicBlocks {
      */
     _onTargetCreated (newTarget, sourceTarget) {
         if (sourceTarget) {
-            const musicState = sourceTarget.getCustomState(Scratch3MusicBlocks.STATE_KEY);
+            const musicState = sourceTarget.getCustomState(
+                Scratch3MusicBlocks.STATE_KEY
+            );
             if (musicState) {
-                newTarget.setCustomState(Scratch3MusicBlocks.STATE_KEY, Clone.simple(musicState));
+                newTarget.setCustomState(
+                    Scratch3MusicBlocks.STATE_KEY,
+                    Clone.simple(musicState)
+                );
             }
         }
     }
@@ -791,7 +818,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.midiPlayDrumForBeats',
                         default: 'play drum [DRUM] for [BEATS] beats',
-                        description: 'play drum sample for a number of beats according to a mapping of MIDI codes'
+                        description:
+                            'play drum sample for a number of beats according to a mapping of MIDI codes'
                     }),
                     arguments: {
                         DRUM: {
@@ -812,7 +840,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.restForBeats',
                         default: 'rest for [BEATS] beats',
-                        description: 'rest (play no sound) for a number of beats'
+                        description:
+                            'rest (play no sound) for a number of beats'
                     }),
                     arguments: {
                         BEATS: {
@@ -846,7 +875,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.setInstrument',
                         default: 'set instrument to [INSTRUMENT]',
-                        description: 'set the instrument (e.g. piano, guitar, trombone) for notes played'
+                        description:
+                            'set the instrument (e.g. piano, guitar, trombone) for notes played'
                     }),
                     arguments: {
                         INSTRUMENT: {
@@ -862,7 +892,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.midiSetInstrument',
                         default: 'set instrument to [INSTRUMENT]',
-                        description: 'set the instrument for notes played according to a mapping of MIDI codes'
+                        description:
+                            'set the instrument for notes played according to a mapping of MIDI codes'
                     }),
                     arguments: {
                         INSTRUMENT: {
@@ -878,7 +909,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.setTempo',
                         default: 'set tempo to [TEMPO]',
-                        description: 'set tempo (speed) for notes, drums, and rests played'
+                        description:
+                            'set tempo (speed) for notes, drums, and rests played'
                     }),
                     arguments: {
                         TEMPO: {
@@ -893,7 +925,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.changeTempo',
                         default: 'change tempo by [TEMPO]',
-                        description: 'change tempo (speed) for notes, drums, and rests played'
+                        description:
+                            'change tempo (speed) for notes, drums, and rests played'
                     }),
                     arguments: {
                         TEMPO: {
@@ -907,7 +940,8 @@ class Scratch3MusicBlocks {
                     text: formatMessage({
                         id: 'music.getTempo',
                         default: 'tempo',
-                        description: 'get the current tempo (speed) for notes, drums, and rests played'
+                        description:
+                            'get the current tempo (speed) for notes, drums, and rests played'
                     }),
                     blockType: BlockType.REPORTER
                 }
@@ -939,8 +973,12 @@ class Scratch3MusicBlocks {
      * @property {int} DRUM - the number of the drum to play.
      * @property {number} BEATS - the duration in beats of the drum sound.
      */
-    playDrumForBeats (args, util) {
-        this._playDrumForBeats(args.DRUM, args.BEATS, util);
+    *playDrumForBeats (args, util) {
+        return yield* this._playDrumForBeats(
+            yield* args.DRUM(),
+            yield* args.BEATS(),
+            util
+        );
     }
 
     /**
@@ -950,8 +988,8 @@ class Scratch3MusicBlocks {
      * @param {object} args - the block arguments.
      * @param {object} util - utility object provided by the runtime.
      */
-    midiPlayDrumForBeats (args, util) {
-        let drumNum = Cast.toNumber(args.DRUM);
+    *midiPlayDrumForBeats (args, util) {
+        let drumNum = Cast.toNumber(yield* args.DRUM());
         drumNum = Math.round(drumNum);
         const midiDescription = this.MIDI_DRUMS[drumNum - 35];
         if (midiDescription) {
@@ -960,7 +998,7 @@ class Scratch3MusicBlocks {
             drumNum = 2; // Default instrument used in Scratch 2.0
         }
         drumNum += 1; // drumNum input to _playDrumForBeats is one-indexed
-        this._playDrumForBeats(drumNum, args.BEATS, util);
+        yield* this._playDrumForBeats(drumNum, yield* args.BEATS(), util);
     }
 
     /**
@@ -969,18 +1007,18 @@ class Scratch3MusicBlocks {
      * @param {beats} beats - the duration in beats to pause after playing the sound.
      * @param {object} util - utility object provided by the runtime.
      */
-    _playDrumForBeats (drumNum, beats, util) {
-        if (this._stackTimerNeedsInit(util)) {
-            drumNum = Cast.toNumber(drumNum);
-            drumNum = Math.round(drumNum);
-            drumNum -= 1; // drums are one-indexed
-            drumNum = MathUtil.wrapClamp(drumNum, 0, this.DRUM_INFO.length - 1);
-            beats = Cast.toNumber(beats);
-            beats = this._clampBeats(beats);
-            this._playDrumNum(util, drumNum);
-            this._startStackTimer(util, this._beatsToSec(beats));
-        } else {
-            this._checkStackTimer(util);
+    *_playDrumForBeats (drumNum, beats, util) {
+        drumNum = Cast.toNumber(drumNum);
+        drumNum = Math.round(drumNum);
+        drumNum -= 1; // drums are one-indexed
+        drumNum = MathUtil.wrapClamp(drumNum, 0, this.DRUM_INFO.length - 1);
+        beats = Cast.toNumber(beats);
+        beats = this._clampBeats(beats);
+        this._playDrumNum(util, drumNum);
+        const duration = this._beatsToSec(beats);
+        const timer = util.startTimer();
+        while (timer.timeElapsed() < duration * 1000) {
+            yield util.yield();
         }
     }
 
@@ -1012,7 +1050,10 @@ class Scratch3MusicBlocks {
         const engine = util.runtime.audioEngine;
         const context = engine.audioContext;
         const volumeGain = context.createGain();
-        volumeGain.gain.setValueAtTime(util.target.volume / 100, engine.currentTime);
+        volumeGain.gain.setValueAtTime(
+            util.target.volume / 100,
+            engine.currentTime
+        );
         volumeGain.connect(engine.getInputNode());
 
         this._concurrencyCounter++;
@@ -1022,9 +1063,11 @@ class Scratch3MusicBlocks {
 
         player.play();
         // Connect the player to the gain node.
-        player.connect({getInputNode () {
-            return volumeGain;
-        }});
+        player.connect({
+            getInputNode () {
+                return volumeGain;
+            }
+        });
     }
 
     /**
@@ -1033,13 +1076,13 @@ class Scratch3MusicBlocks {
      * @param {object} util - utility object provided by the runtime.
      * @property {number} BEATS - the duration in beats of the rest.
      */
-    restForBeats (args, util) {
-        if (this._stackTimerNeedsInit(util)) {
-            let beats = Cast.toNumber(args.BEATS);
-            beats = this._clampBeats(beats);
-            this._startStackTimer(util, this._beatsToSec(beats));
-        } else {
-            this._checkStackTimer(util);
+    *restForBeats (args, util) {
+        let beats = Cast.toNumber(yield* args.BEATS());
+        beats = this._clampBeats(beats);
+        const duration = this._beatsToSec(beats);
+        const timer = util.startTimer();
+        while (timer.timeElapsed() < duration * 1000) {
+            yield util.yield();
         }
     }
 
@@ -1051,24 +1094,28 @@ class Scratch3MusicBlocks {
      * @property {number} NOTE - the pitch of the note to play, interpreted as a MIDI note number.
      * @property {number} BEATS - the duration in beats of the note.
      */
-    playNoteForBeats (args, util) {
-        if (this._stackTimerNeedsInit(util)) {
-            let note = Cast.toNumber(args.NOTE);
-            note = MathUtil.clamp(note,
-                Scratch3MusicBlocks.MIDI_NOTE_RANGE.min, Scratch3MusicBlocks.MIDI_NOTE_RANGE.max);
-            let beats = Cast.toNumber(args.BEATS);
-            beats = this._clampBeats(beats);
-            // If the duration is 0, do not play the note. In Scratch 2.0, "play drum for 0 beats" plays the drum,
-            // but "play note for 0 beats" is silent.
-            if (beats === 0) return;
+    *playNoteForBeats (args, util) {
+        let note = Cast.toNumber(yield* args.NOTE());
+        note = MathUtil.clamp(
+            note,
+            Scratch3MusicBlocks.MIDI_NOTE_RANGE.min,
+            Scratch3MusicBlocks.MIDI_NOTE_RANGE.max
+        );
+        let beats = Cast.toNumber(yield* args.BEATS());
 
-            const durationSec = this._beatsToSec(beats);
+        beats = this._clampBeats(beats);
+        // If the duration is 0, do not play the note. In Scratch 2.0, "play drum for 0 beats" plays the drum,
+        // but "play note for 0 beats" is silent.
+        if (beats === 0) return;
 
-            this._playNote(util, note, durationSec);
+        const durationSec = this._beatsToSec(beats);
 
-            this._startStackTimer(util, durationSec);
-        } else {
-            this._checkStackTimer(util);
+        this._playNote(util, note, durationSec);
+
+        const timer = util.startTimer();
+
+        while (timer.timeElapsed() < durationSec * 1000) {
+            yield util.yield();
         }
     }
 
@@ -1108,13 +1155,19 @@ class Scratch3MusicBlocks {
 
         // If the audio sample has not loaded yet, bail out
         if (typeof this._instrumentPlayerArrays[inst] === 'undefined') return;
-        if (typeof this._instrumentPlayerArrays[inst][sampleIndex] === 'undefined') return;
+        if (
+            typeof this._instrumentPlayerArrays[inst][sampleIndex] ===
+            'undefined'
+        ) {
+            return;
+        }
 
         // Fetch the sound player to play the note.
         const engine = util.runtime.audioEngine;
 
         if (!this._instrumentPlayerNoteArrays[inst][note]) {
-            this._instrumentPlayerNoteArrays[inst][note] = this._instrumentPlayerArrays[inst][sampleIndex].take();
+            this._instrumentPlayerNoteArrays[inst][note] =
+                this._instrumentPlayerArrays[inst][sampleIndex].take();
         }
 
         const player = this._instrumentPlayerNoteArrays[inst][note];
@@ -1128,13 +1181,18 @@ class Scratch3MusicBlocks {
 
         // Set its pitch.
         const sampleNote = sampleArray[sampleIndex];
-        const notePitchInterval = this._ratioForPitchInterval(note - sampleNote);
+        const notePitchInterval = this._ratioForPitchInterval(
+            note - sampleNote
+        );
 
         // Create gain nodes for this note's volume and release, and chain them
         // to the output.
         const context = engine.audioContext;
         const volumeGain = context.createGain();
-        volumeGain.gain.setValueAtTime(util.target.volume / 100, engine.currentTime);
+        volumeGain.gain.setValueAtTime(
+            util.target.volume / 100,
+            engine.currentTime
+        );
         const releaseGain = context.createGain();
         volumeGain.connect(releaseGain);
         releaseGain.connect(engine.getInputNode());
@@ -1158,9 +1216,11 @@ class Scratch3MusicBlocks {
         // Start playing the note
         player.play();
         // Connect the player to the gain node.
-        player.connect({getInputNode () {
-            return volumeGain;
-        }});
+        player.connect({
+            getInputNode () {
+                return volumeGain;
+            }
+        });
         // Set playback now after play creates the outputNode.
         player.outputNode.playbackRate.value = notePitchInterval;
         // Schedule playback to stop.
@@ -1194,7 +1254,7 @@ class Scratch3MusicBlocks {
      * @private
      */
     _ratioForPitchInterval (interval) {
-        return Math.pow(2, (interval / 12));
+        return Math.pow(2, interval / 12);
     }
 
     /**
@@ -1204,7 +1264,11 @@ class Scratch3MusicBlocks {
      * @private
      */
     _clampBeats (beats) {
-        return MathUtil.clamp(beats, Scratch3MusicBlocks.BEAT_RANGE.min, Scratch3MusicBlocks.BEAT_RANGE.max);
+        return MathUtil.clamp(
+            beats,
+            Scratch3MusicBlocks.BEAT_RANGE.min,
+            Scratch3MusicBlocks.BEAT_RANGE.max
+        );
     }
 
     /**
@@ -1217,40 +1281,6 @@ class Scratch3MusicBlocks {
         return (60 / this.getTempo()) * beats;
     }
 
-    /**
-     * Check if the stack timer needs initialization.
-     * @param {object} util - utility object provided by the runtime.
-     * @return {boolean} - true if the stack timer needs to be initialized.
-     * @private
-     */
-    _stackTimerNeedsInit (util) {
-        return !util.stackFrame.timer;
-    }
-
-    /**
-     * Start the stack timer and the yield the thread if necessary.
-     * @param {object} util - utility object provided by the runtime.
-     * @param {number} duration - a duration in seconds to set the timer for.
-     * @private
-     */
-    _startStackTimer (util, duration) {
-        util.stackFrame.timer = new Timer();
-        util.stackFrame.timer.start();
-        util.stackFrame.duration = duration;
-        util.yield();
-    }
-
-    /**
-     * Check the stack timer, and if its time is not up yet, yield the thread.
-     * @param {object} util - utility object provided by the runtime.
-     * @private
-     */
-    _checkStackTimer (util) {
-        const timeElapsed = util.stackFrame.timer.timeElapsed();
-        if (timeElapsed < util.stackFrame.duration * 1000) {
-            util.yield();
-        }
-    }
 
     /**
      * Select an instrument for playing notes.
@@ -1258,8 +1288,8 @@ class Scratch3MusicBlocks {
      * @param {object} util - utility object provided by the runtime.
      * @property {int} INSTRUMENT - the number of the instrument to select.
      */
-    setInstrument (args, util) {
-        this._setInstrument(args.INSTRUMENT, util, false);
+    *setInstrument (args, util) {
+        this._setInstrument(yield* args.INSTRUMENT(), util, false);
     }
 
     /**
@@ -1269,8 +1299,8 @@ class Scratch3MusicBlocks {
      * @param {object} util - utility object provided by the runtime.
      * @property {int} INSTRUMENT - the MIDI number of the instrument to select.
      */
-    midiSetInstrument (args, util) {
-        this._setInstrument(args.INSTRUMENT, util, true);
+    *midiSetInstrument (args, util) {
+        this._setInstrument(yield* args.INSTRUMENT(), util, true);
     }
 
     /**
@@ -1288,7 +1318,11 @@ class Scratch3MusicBlocks {
         if (mapMidi) {
             instNum = (this.MIDI_INSTRUMENTS[instNum] || 0) - 1;
         }
-        instNum = MathUtil.wrapClamp(instNum, 0, this.INSTRUMENT_INFO.length - 1);
+        instNum = MathUtil.wrapClamp(
+            instNum,
+            0,
+            this.INSTRUMENT_INFO.length - 1
+        );
         musicState.currentInstrument = instNum;
     }
 
@@ -1297,8 +1331,8 @@ class Scratch3MusicBlocks {
      * @param {object} args - the block arguments.
      * @property {number} TEMPO - the tempo, in beats per minute.
      */
-    setTempo (args) {
-        const tempo = Cast.toNumber(args.TEMPO);
+    *setTempo (args) {
+        const tempo = Cast.toNumber(yield* args.TEMPO());
         this._updateTempo(tempo);
     }
 
@@ -1307,8 +1341,8 @@ class Scratch3MusicBlocks {
      * @param {object} args - the block arguments.
      * @property {number} TEMPO - the amount to change the tempo, in beats per minute.
      */
-    changeTempo (args) {
-        const change = Cast.toNumber(args.TEMPO);
+    *changeTempo (args) {
+        const change = Cast.toNumber(yield* args.TEMPO());
         const tempo = change + this.getTempo();
         this._updateTempo(tempo);
     }
@@ -1319,7 +1353,11 @@ class Scratch3MusicBlocks {
      * @private
      */
     _updateTempo (tempo) {
-        tempo = MathUtil.clamp(tempo, Scratch3MusicBlocks.TEMPO_RANGE.min, Scratch3MusicBlocks.TEMPO_RANGE.max);
+        tempo = MathUtil.clamp(
+            tempo,
+            Scratch3MusicBlocks.TEMPO_RANGE.min,
+            Scratch3MusicBlocks.TEMPO_RANGE.max
+        );
         const stage = this.runtime.getTargetForStage();
         if (stage) {
             stage.tempo = tempo;

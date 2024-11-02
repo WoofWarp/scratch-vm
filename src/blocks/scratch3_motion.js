@@ -1,6 +1,5 @@
 const Cast = require('../util/cast');
 const MathUtil = require('../util/math-util');
-const Timer = require('../util/timer');
 
 class Scratch3MotionBlocks {
     constructor (runtime) {
@@ -180,7 +179,7 @@ class Scratch3MotionBlocks {
         }
     }
 
-    *ifOnEdgeBounce (args, util) {
+    ifOnEdgeBounce (args, util) {
         this._ifOnEdgeBounce(util.target);
     }
     _ifOnEdgeBounce (target) { // used by compiler
@@ -239,7 +238,7 @@ class Scratch3MotionBlocks {
         target.setXY(fencedPosition[0], fencedPosition[1]);
     }
 
-    *setRotationStyle (args, util) {
+    setRotationStyle (args, util) {
         util.target.setRotationStyle(args.STYLE.value);
     }
 
@@ -263,15 +262,15 @@ class Scratch3MotionBlocks {
         util.target.setXY(util.target.x, y);
     }
 
-    *getX (args, util) {
+    getX (args, util) {
         return this.limitPrecision(util.target.x);
     }
 
-    *getY (args, util) {
+    getY (args, util) {
         return this.limitPrecision(util.target.y);
     }
 
-    *getDirection (args, util) {
+    getDirection (args, util) {
         return util.target.direction;
     }
 

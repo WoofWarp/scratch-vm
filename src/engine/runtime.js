@@ -21,7 +21,6 @@ const xmlEscape = require('../util/xml-escape');
 const ScratchLinkWebSocket = require('../util/scratch-link-websocket');
 const FontManager = require('./tw-font-manager');
 const fetchWithTimeout = require('../util/fetch-with-timeout');
-const generate = require('./generate');
 const platform = require('./tw-platform.js');
 
 // Virtual I/O devices.
@@ -2009,9 +2008,7 @@ class Runtime extends EventEmitter {
         }
 
         // tw: compile new threads. Do not attempt to compile monitor threads.
-        if (!(opts && opts.updateMonitor) && this.compilerOptions.enabled) {
-            thread.tryCompile();
-        }
+        thread.compile(!(opts && opts.updateMonitor) && this.compilerOptions.enabled);
 
         return thread;
     }
@@ -2024,7 +2021,7 @@ class Runtime extends EventEmitter {
         // Mark the thread for later removal
         thread.isKilled = true;
         // Inform sequencer to stop executing that thread.
-        this.sequencer.retireThread(thread);
+        thread.kill();
     }
 
     /**
@@ -2040,11 +2037,9 @@ class Runtime extends EventEmitter {
         newThread.stackClick = thread.stackClick;
         newThread.updateMonitor = thread.updateMonitor;
         newThread.blockContainer = thread.blockContainer;
-        newThread.pushStack(thread.topBlock);
+        // newThread.pushStack(thread.topBlock);
         // tw: when a thread is restarted, we have to check whether the previous script was attempted to be compiled.
-        if (thread.triedToCompile && this.compilerOptions.enabled) {
-            newThread.tryCompile();
-        }
+        newThread.compile(thread.triedToCompile && this.compilerOptions.enabled);
         if (!newThread.stackClick && !newThread.updateMonitor) {
             this.threadMap.set(newThread.getId(), newThread);
         }
@@ -2252,11 +2247,9 @@ class Runtime extends EventEmitter {
             if (!thread.isCompiled || thread.executableHat) {
                 // It is quite likely that we are currently executing a block, so make sure
                 // that we leave the compiler's state intact at the end.
-                if (!thread.generator) {
-                    thread.generator = generate(thread.blockContainer, thread.topBlock)(thread);
-                }
+                // TODO: woof: unite global state with interpreter
                 compilerExecute.saveGlobalState();
-                compilerExecute(thread);
+                thread.step();
                 compilerExecute.restoreGlobalState();
             }
             // } else {
@@ -2934,7 +2927,7 @@ class Runtime extends EventEmitter {
                 const thread = new Thread(topBlockId);
                 thread.target = target;
                 thread.blockContainer = target.blockContainer;
-                thread.tryCompile();
+                thread.compile(true);
             }
         });
     }

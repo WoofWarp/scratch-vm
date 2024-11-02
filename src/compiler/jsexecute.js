@@ -76,10 +76,10 @@ runtimeFunctions.waitThreads = `const waitThreads = function*(threads) {
             }
         }
         if (allWaiting) {
-            thread.status = 3; // STATUS_YIELD_TICK
+            yield globalState.blockUtility.yieldTick();
         }
 
-        yield;
+        yield globalState.blockUtility.yield();
     }
 }`;
 
@@ -106,27 +106,7 @@ runtimeFunctions.waitThreads = `const waitThreads = function*(threads) {
  */
 runtimeFunctions.executeInCompatibilityLayer = `let hasResumedFromPromise = false;
 const waitPromise = function*(promise) {
-    const thread = globalState.thread;
-    let returnValue;
-
-    // enter STATUS_PROMISE_WAIT and yield
-    // this will stop script execution until the promise handlers reset the thread status
-    // because promise handlers might execute immediately, configure thread.status here
-    thread.status = 1; // STATUS_PROMISE_WAIT
-
-    promise
-        .then(value => {
-            returnValue = value;
-            thread.status = 0; // STATUS_RUNNING
-        }, error => {
-            globalState.log.warn('Promise rejected in compiled script:', error);
-            returnValue = '' + error;
-            thread.status = 0; // STATUS_RUNNING
-        });
-
-    yield;
-
-    return returnValue;
+    return yield promise;
 };
 const isPromise = value => (
     // see engine/execute.js
@@ -134,89 +114,38 @@ const isPromise = value => (
     typeof value === 'object' &&
     typeof value.then === 'function'
 );
-const executeInCompatibilityLayer = function*(inputs, blockFunction, isWarp, useFlags, blockId, branchInfo) {
+const executeInCompatibilityLayer = function*(inputs, blockFunction) {
     const thread = globalState.thread;
     const blockUtility = globalState.blockUtility;
 
-    const finish = (returnValue) => {
-        if (branchInfo) {
-            if (typeof returnValue === 'undefined' && blockUtility._startedBranch) {
-                branchInfo.isLoop = blockUtility._startedBranch[1];
-                return blockUtility._startedBranch[0];
-            }
-            branchInfo.isLoop = branchInfo.defaultIsLoop;
-            return returnValue;
-        }
-        return returnValue;
-    };
+    blockUtility.init(thread);
 
-    const executeBlock = () => {
-        blockUtility.init(thread, blockId);
-        return blockFunction(inputs, blockUtility);
-    };
-
-    return yield* executeBlock();
-
-    // let returnValue = executeBlock();
-    // if (isPromise(returnValue)) {
-    //     returnValue = finish(yield* waitPromise(returnValue));
-    //     if (useFlags) hasResumedFromPromise = true;
-    //     return returnValue;
-    // }
-
-    // if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
-    //     // Something external is forcing us to stop
-    //     yield;
-    //     // Make up a return value because whatever is forcing us to stop can't specify one
-    //     return '';
-    // }
-
-    // while (thread.status === 2 /* STATUS_YIELD */ || thread.status === 3 /* STATUS_YIELD_TICK */) {
-    //     // Yielded threads will run next iteration.
-    //     if (thread.status === 2 /* STATUS_YIELD */) {
-    //         thread.status = 0; // STATUS_RUNNING
-    //         // Yield back to the event loop when stuck or not in warp mode.
-    //         if (!isWarp || isStuck()) {
-    //             yield;
-    //         }
-    //     } else {
-    //         // status is STATUS_YIELD_TICK, always yield to the event loop
-    //         yield;
-    //     }
-
-    //     returnValue = executeBlock();
-    //     if (isPromise(returnValue)) {
-    //         returnValue = finish(yield* waitPromise(returnValue));
-    //         if (useFlags) hasResumedFromPromise = true;
-    //         return returnValue;
-    //     }
-
-    //     if (thread.status === 1 /* STATUS_PROMISE_WAIT */ || thread.status === 4 /* STATUS_DONE */) {
-    //         yield;
-    //         return finish('');
-    //     }
-    // }
-
-    // return finish(returnValue);
+    return blockFunction instanceof function*(){}.constructor ? yield* blockFunction(inputs, blockUtility) : blockFunction(inputs, blockUtility);
 }`;
 
 /**
  * @param {boolean} isLoop True if the block is a LOOP by default (can be overridden by startBranch() call)
  * @returns {unknown} Branch info object for compatibility layer.
  */
-runtimeFunctions.createBranchInfo = `const createBranchInfo = (isLoop) => ({
-    defaultIsLoop: isLoop,
-    isLoop: false,
-    branch: 0,
-    stackFrame: {}
-});`;
+// runtimeFunctions.createBranchInfo = `const createBranchInfo = (isLoop) => ({
+//     defaultIsLoop: isLoop,
+//     isLoop: false,
+//     branch: 0,
+//     stackFrame: {}
+// });`;
 
 /**
  * End the current script.
  */
 runtimeFunctions.retire = `const retire = () => {
     const thread = globalState.thread;
-    thread.target.runtime.sequencer.retireThread(thread);
+    thread.kill();
+}`;
+
+runtimeFunctions.toGenerator = `const toGenerator = (value) => {
+    return function* () {
+        return value;
+    }
 }`;
 
 /**
@@ -571,7 +500,7 @@ runtimeFunctions.tan = `const tan = (angle) => {
  * @returns {unknown} A generator that will yield once then call the function and return its value.
  */
 runtimeFunctions.yieldThenCall = `const yieldThenCall = function* (callback, ...args) {
-    yield;
+    yield globalState.blockUtility.yield();
     return callback(...args);
 }`;
 
@@ -581,7 +510,7 @@ runtimeFunctions.yieldThenCall = `const yieldThenCall = function* (callback, ...
  * @returns {unknown} A generator that will yield once then delegate to the generator function and return its value.
  */
 runtimeFunctions.yieldThenCallGenerator = `const yieldThenCallGenerator = function* (callback, ...args) {
-    yield;
+    yield globalState.blockUtility.yield();
     return yield* callback(...args);
 }`;
 

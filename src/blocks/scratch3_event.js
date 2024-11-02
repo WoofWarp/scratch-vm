@@ -27,7 +27,8 @@ class Scratch3EventBlocks {
             event_whentouchingobject: this.touchingObject,
             event_broadcast: this.broadcast,
             event_broadcastandwait: this.broadcastAndWait,
-            event_whengreaterthan: this.hatGreaterThanPredicate
+            event_whengreaterthan: this.hatGreaterThanPredicate,
+            event_broadcast_menu: this.broadcastMenu
         };
     }
 
@@ -84,12 +85,20 @@ class Scratch3EventBlocks {
     }
 
     *broadcast (args, util) {
-        const broadcastVar = util.runtime
-            .getTargetForStage()
-            .lookupBroadcastMsg(
-                args.BROADCAST_OPTION.id,
-                args.BROADCAST_OPTION.name
-            );
+        let broadcastVar = null;
+        const val = yield* args.BROADCAST_INPUT();
+        if (typeof val === 'object') {
+            broadcastVar = util.runtime
+                .getTargetForStage()
+                .lookupBroadcastMsg(
+                    val.id,
+                    val.name
+                );
+        } else {
+            broadcastVar = util.runtime
+                .getTargetForStage()
+                .lookupBroadcastMsg(null, val);
+        }
         if (broadcastVar) {
             const broadcastOption = broadcastVar.name;
             util.startHats('event_whenbroadcastreceived', {
@@ -98,13 +107,25 @@ class Scratch3EventBlocks {
         }
     }
 
+    *broadcastMenu (args) {
+        return args.BROADCAST_OPTION;
+    }
+
     *broadcastAndWait (args, util) {
-        const broadcastVar = util.runtime
-            .getTargetForStage()
-            .lookupBroadcastMsg(
-                args.BROADCAST_OPTION.id,
-                args.BROADCAST_OPTION.name
-            );
+        let broadcastVar = null;
+        const val = yield* args.BROADCAST_INPUT();
+        if (typeof val === 'object') {
+            broadcastVar = util.runtime
+                .getTargetForStage()
+                .lookupBroadcastMsg(
+                    val.id,
+                    val.name
+                );
+        } else {
+            broadcastVar = util.runtime
+                .getTargetForStage()
+                .lookupBroadcastMsg(null, val);
+        }
         if (broadcastVar) {
             const broadcastOption = broadcastVar.name;
             const startedThreads = util.startHats(
@@ -114,11 +135,10 @@ class Scratch3EventBlocks {
                 }
             );
             if (startedThreads.length === 0) return;
-            let waiting = [];
             while (
-                (waiting = startedThreads.some(
+                startedThreads.some(
                     thread => this.runtime.threads.indexOf(thread) !== -1
-                )).length !== 0
+                )
             ) {
                 if (
                     startedThreads.every(thread =>

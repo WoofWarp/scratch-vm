@@ -53,7 +53,8 @@ class Scratch3ControlBlocks {
     *repeat (args, util) {
         const times = Math.round(Cast.toNumber(yield* args.TIMES()));
         for (let i = times; i--;) {
-            yield* util.SUBSTACK();
+            if (args.SUBSTACK) yield* args.SUBSTACK();
+            yield util.yield();
         }
         // // Initialize loop
         // if (typeof util.stackFrame.loopCounter === 'undefined') {
@@ -71,8 +72,8 @@ class Scratch3ControlBlocks {
     }
 
     *repeatUntil (args, util) {
-        while (!(yield* args.CONDITION())) {
-            yield* args.SUBSTACK();
+        while (!args.CONDITION || !(yield* args.CONDITION())) {
+            if (args.SUBSTACK) yield* args.SUBSTACK();
             yield util.yield();
         }
         // const condition = Cast.toBoolean(args.CONDITION);
@@ -83,8 +84,8 @@ class Scratch3ControlBlocks {
     }
 
     *repeatWhile (args, util) {
-        while (yield* args.CONDITION()) {
-            yield* args.SUBSTACK();
+        while (args.CONDITION && (yield* args.CONDITION())) {
+            if (args.SUBSTACK) yield* args.SUBSTACK();
             yield util.yield();
         }
     }
@@ -95,7 +96,7 @@ class Scratch3ControlBlocks {
         
         for (let i = 1; i <= Number(args.VALUE); i++) {
             variable.value = i;
-            yield* args.SUBSTACK();
+            if (args.SUBSTACK) yield* args.SUBSTACK();
             yield util.yield();
         }
         // if (typeof util.stackFrame.index === 'undefined') {
@@ -117,7 +118,7 @@ class Scratch3ControlBlocks {
 
     *forever (args, util) {
         for (;;) {
-            yield* args.SUBSTACK();
+            if (args.SUBSTACK) yield* args.SUBSTACK();
             yield util.yield();
         }
     }
@@ -133,27 +134,23 @@ class Scratch3ControlBlocks {
     }
 
     *if (args, util) {
-        const condition = Cast.toBoolean(yield* args.CONDITION());
-        // if (condition) {
-        //     util.startBranch(1, false);
-        // }
-        if (condition) {
-            yield* args.SUBSTACK();
+        if (args.CONDITION && Cast.toBoolean(yield* args.CONDITION())) {
+            if (args.SUBSTACK) yield* args.SUBSTACK();
+            else util.yield();
         }
     }
 
     *ifElse (args, util) {
-        const condition = Cast.toBoolean(yield* args.CONDITION());
-        if (condition) {
-            // util.startBranch(1, false);
-            yield* args.SUBSTACK();
-        } else if (args.SUBSTACK2) {
-            // util.startBranch(2, false);
-            yield* args.SUBSTACK2();
+        if (args.CONDITION && Cast.toBoolean(yield* args.CONDITION())) {
+            if (args.SUBSTACK) yield* args.SUBSTACK();
+            else util.yield();
+        } else {
+            if (args.SUBSTACK2) yield* args.SUBSTACK2();
+            else util.yield();
         }
     }
 
-    *stop (args, util) {
+    stop (args, util) {
         const option = args.STOP_OPTION.value;
         if (option === 'all') {
             util.stopAll();
@@ -190,25 +187,25 @@ class Scratch3ControlBlocks {
         }
     }
 
-    *deleteClone (args, util) {
+    deleteClone (args, util) {
         if (util.target.isOriginal) return;
         this.runtime.disposeTarget(util.target);
         this.runtime.stopForTarget(util.target);
     }
 
-    *getCounter () {
+    getCounter () {
         return this._counter;
     }
 
-    *clearCounter () {
+    clearCounter () {
         this._counter = 0;
     }
 
-    *incrCounter () {
+    incrCounter () {
         this._counter++;
     }
 
-    *allAtOnce (args, util) {
+    *allAtOnce (args) {
         // Since the "all at once" block is implemented for compatiblity with
         // Scratch 2.0 projects, it behaves the same way it did in 2.0, which
         // is to simply run the contained script (like "if 1 = 1").

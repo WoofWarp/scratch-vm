@@ -1,6 +1,5 @@
 const log = require('../util/log');
 const Cast = require('../util/cast');
-const BlockType = require('../extension-support/block-type');
 const VariablePool = require('./variable-pool');
 const jsexecute = require('./jsexecute');
 const environment = require('./environment');
@@ -435,7 +434,7 @@ class JSGenerator {
 
         case 'compat':
             // Compatibility layer inputs never use flags.
-            return new TypedInput(`(${this.generateCompatibilityLayerCall(node, false)})`, TYPE_UNKNOWN);
+            return new TypedInput(`(${this.generateCompatibilityLayerCall(node)})`, TYPE_UNKNOWN);
 
         case 'constant':
             return this.safeConstantInput(node.value);
@@ -720,7 +719,7 @@ class JSGenerator {
                 const variableReference = this.evaluateOnce(`${objectReference} && ${objectReference}.lookupVariableByNameAndType("${sanitize(property)}", "", true)`);
                 return new TypedInput(`(${variableReference} ? ${variableReference}.value : 0)`, TYPE_UNKNOWN);
             }
-            return new TypedInput(`runtime.ext_scratch3_sensing.getAttributeOf({OBJECT: ${object}, PROPERTY: "${sanitize(property)}" })`, TYPE_UNKNOWN);
+            return new TypedInput(`(yield* runtime.ext_scratch3_sensing.getAttributeOf({OBJECT: toGenerator(${object}), PROPERTY: {value: "${sanitize(property)}"} }))`, TYPE_UNKNOWN);
         }
         case 'sensing.second':
             return new TypedInput(`(new Date().getSeconds())`, TYPE_NUMBER);
@@ -762,27 +761,28 @@ class JSGenerator {
             // If you don't do this, the loop effectively yields twice per iteration and will run at half-speed.
             const isLastInLoop = this.isLastBlockInLoop();
 
-            const blockType = node.blockType;
-            if (blockType === BlockType.COMMAND || blockType === BlockType.HAT) {
-                this.source += `${this.generateCompatibilityLayerCall(node, isLastInLoop)};\n`;
-            } else if (blockType === BlockType.CONDITIONAL || blockType === BlockType.LOOP) {
-                const branchVariable = this.localVariables.next();
-                this.source += `const ${branchVariable} = createBranchInfo(${blockType === BlockType.LOOP});\n`;
-                this.source += `while (${branchVariable}.branch = +(${this.generateCompatibilityLayerCall(node, false, branchVariable)})) {\n`;
-                this.source += `switch (${branchVariable}.branch) {\n`;
-                for (const index in node.substacks) {
-                    this.source += `case ${+index}: {\n`;
-                    this.descendStack(node.substacks[index], new Frame(false));
-                    this.source += `break;\n`;
-                    this.source += `}\n`; // close case
-                }
-                this.source += '}\n'; // close switch
-                this.source += `if (!${branchVariable}.isLoop) break;\n`;
-                this.yieldLoop();
-                this.source += '}\n'; // close while
-            } else {
-                throw new Error(`Unknown block type: ${blockType}`);
-            }
+            // const blockType = node.blockType;
+            this.source += `${this.generateCompatibilityLayerCall(node)};\n`;
+            // if (blockType === BlockType.COMMAND || blockType === BlockType.HAT) {
+            //     this.source += `${this.generateCompatibilityLayerCall(node, isLastInLoop)};\n`;
+            // } else if (blockType === BlockType.CONDITIONAL || blockType === BlockType.LOOP) {
+            //     const branchVariable = this.localVariables.next();
+            //     this.source += `const ${branchVariable} = createBranchInfo(${blockType === BlockType.LOOP});\n`;
+            //     this.source += `while (${branchVariable}.branch = +(${this.generateCompatibilityLayerCall(node, false, branchVariable)})) {\n`;
+            //     this.source += `switch (${branchVariable}.branch) {\n`;
+            //     for (const index in node.substacks) {
+            //         this.source += `case ${+index}: {\n`;
+            //         this.descendStack(node.substacks[index], new Frame(false));
+            //         this.source += `break;\n`;
+            //         this.source += `}\n`; // close case
+            //     }
+            //     this.source += '}\n'; // close switch
+            //     this.source += `if (!${branchVariable}.isLoop) break;\n`;
+            //     this.yieldLoop();
+            //     this.source += '}\n'; // close while
+            // } else {
+            //     throw new Error(`Unknown block type: ${blockType}`);
+            // }
 
             if (isLastInLoop) {
                 this.source += 'if (hasResumedFromPromise) {hasResumedFromPromise = false;continue;}\n';
@@ -893,7 +893,7 @@ class JSGenerator {
             this.source += `if (!edgeWasActivated) {\n`;
             this.retire();
             this.source += '}\n';
-            this.source += 'yield;\n';
+            this.source += 'yield globalState.blockUtility.yield();\n';
             this.source += '}\n';
             this.isInHat = false;
             break;
@@ -902,7 +902,7 @@ class JSGenerator {
             this.source += `if (!${this.descendInput(node.condition).asBoolean()}) {\n`;
             this.retire();
             this.source += '}\n';
-            this.source += 'yield;\n';
+            this.source += 'yield globalState.blockUtility.yield();\n';
             this.isInHat = false;
             break;
 
@@ -1225,8 +1225,7 @@ class JSGenerator {
     descendAddonCall (node) {
         const inputs = this.descendInputRecord(node.arguments);
         const blockFunction = `runtime.getAddonBlock("${sanitize(node.code)}").callback`;
-        const blockId = `"${sanitize(node.blockId)}"`;
-        return `yield* executeInCompatibilityLayer(${inputs}, ${blockFunction}, ${this.isWarp}, false, ${blockId})`;
+        return `yield* executeInCompatibilityLayer(${inputs}, ${blockFunction})`;
     }
 
     evaluateOnce (source) {
@@ -1243,7 +1242,7 @@ class JSGenerator {
         // When in a procedure, return will only send us back to the previous procedure, so instead we yield back to the sequencer.
         // Outside of a procedure, return will correctly bring us back to the sequencer.
         if (this.isProcedure) {
-            this.source += 'retire(); yield;\n';
+            this.source += 'retire(); yield globalState.blockUtility.yield();\n';
         } else {
             this.source += 'retire(); return;\n';
         }
@@ -1281,7 +1280,7 @@ class JSGenerator {
      */
     yieldNotWarp () {
         if (!this.isWarp) {
-            this.source += 'yield;\n';
+            this.source += 'yield globalState.blockUtility.yield();\n';
             this.yielded();
         }
     }
@@ -1291,9 +1290,9 @@ class JSGenerator {
      */
     yieldStuckOrNotWarp () {
         if (this.isWarp) {
-            this.source += 'if (isStuck()) yield;\n';
+            this.source += 'if (isStuck()) yield globalState.blockUtility.yield();\n';
         } else {
-            this.source += 'yield;\n';
+            this.source += 'yield globalState.blockUtility.yield();\n';
         }
         this.yielded();
     }
@@ -1325,22 +1324,26 @@ class JSGenerator {
      * @param {string|null} [frameName] Name of the stack frame variable, if any
      * @returns {string} The JS of the call.
      */
-    generateCompatibilityLayerCall (node, setFlags, frameName = null) {
+    generateCompatibilityLayerCall (node) {
         const opcode = node.opcode;
 
         let result = 'yield* executeInCompatibilityLayer({';
 
         for (const inputName of Object.keys(node.inputs)) {
             const input = node.inputs[inputName];
-            const compiledInput = this.descendInput(input).asSafe();
-            result += `"${sanitize(inputName)}":${compiledInput},`;
+            if (input.kind === 'substack') {
+                result += `"${sanitize(inputName)}":function*(){${this.descendStack(node.value, new Frame(false))}},`;
+            } else {
+                const compiledInput = this.descendInput(input).asSafe();
+                result += `"${sanitize(inputName)}":toGenerator(${compiledInput}),`;
+            }
         }
         for (const fieldName of Object.keys(node.fields)) {
             const field = node.fields[fieldName];
-            result += `"${sanitize(fieldName)}":"${sanitize(field)}",`;
+            result += `"${sanitize(fieldName)}":${JSON.stringify(field)},`;
         }
         const opcodeFunction = this.evaluateOnce(`runtime.getOpcodeFunction("${sanitize(opcode)}")`);
-        result += `}, ${opcodeFunction}, ${this.isWarp}, ${setFlags}, "${sanitize(node.id)}", ${frameName})`;
+        result += `}, ${opcodeFunction})`;
 
         return result;
     }
