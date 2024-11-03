@@ -12,10 +12,10 @@ const globalState = {
     Cast: require('../util/cast'),
     log: require('../util/log'),
     blockUtility: require('../engine/block-utility-instance'),
-    get thread() {
+    get thread () {
         return globalState.blockUtility.thread;
     },
-    set thread(v) {
+    set thread (v) {
         globalState.blockUtility.thread = v;
     }
 };

@@ -9,7 +9,6 @@ const BlocksRuntimeCache = require('./blocks-runtime-cache');
 const BlockType = require('../extension-support/block-type');
 const Profiler = require('./profiler');
 const Sequencer = require('./sequencer');
-const compilerExecute = require('../compiler/jsexecute');
 const ScratchBlocksConstants = require('./scratch-blocks-constants');
 const TargetType = require('../extension-support/target-type');
 const Thread = require('./thread');
@@ -2247,14 +2246,8 @@ class Runtime extends EventEmitter {
             if (!thread.isCompiled || thread.executableHat) {
                 // It is quite likely that we are currently executing a block, so make sure
                 // that we leave the compiler's state intact at the end.
-                // compilerExecute.saveGlobalState();
                 thread.step();
-                // compilerExecute.restoreGlobalState();
             }
-            // } else {
-            //     execute(this.sequencer, thread);
-            //     thread.goToNextBlock();
-            // }
         });
         return newThreads;
     }

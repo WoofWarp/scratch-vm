@@ -234,7 +234,7 @@ class Sequencer {
             //     this.runtime.profiler.increment(executeProfilerId);
             // }
             if (thread.target === null) {
-                this.retireThread(thread);
+                thread.kill();
             } else {
                 thread.step();
             }
@@ -384,6 +384,7 @@ class Sequencer {
     /**
      * Retire a thread in the middle, without considering further blocks.
      * @param {!Thread} thread Thread object to retire.
+     * @deprecated For compatibility.
      */
     retireThread (thread) {
         thread.kill();

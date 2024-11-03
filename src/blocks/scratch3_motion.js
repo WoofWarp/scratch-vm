@@ -184,7 +184,8 @@ class Scratch3MotionBlocks {
         const target = util.target;
         const targetXY = this.getTargetXY(yield* args.TO(), util);
         if (targetXY) {
-            this.glide({SECS: args.SECS, X: targetXY[0], Y: targetXY[1]}, {target, yield: util.yield, startTimer: util.startTimer});
+            const fakeUtil = {target, yield: util.yield, startTimer: util.startTimer};
+            this.glide({SECS: args.SECS, X: targetXY[0], Y: targetXY[1]}, fakeUtil);
         }
     }
 

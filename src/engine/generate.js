@@ -1,10 +1,10 @@
-const BlocksExecuteCache = require("./blocks-execute-cache");
+const BlocksExecuteCache = require('./blocks-execute-cache');
 // const log = require('../util/log');
 // const Thread = require('./thread');
-const { Map } = require("immutable");
+const {Map} = require('immutable');
 // const cast = require("../util/cast");
 const blockUtility = require('./block-utility-instance');
-const { KillThread } = require("./thread-status");
+const {KillThread} = require('./thread-status');
 
 /**
  * A execute.js internal representation of a block to reduce the time spent in
@@ -22,7 +22,7 @@ const { KillThread } = require("./thread-status");
  * @param {object} cached default set of cached values
  */
 class BlockCached {
-    constructor(blockContainer, cached) {
+    constructor (blockContainer, cached) {
         /** @type {import('./runtime')} */
         const runtime = blockContainer.runtime;
         this.args = Object.assign({}, cached.fields);
@@ -30,8 +30,9 @@ class BlockCached {
             if (input.block) {
                 const inputBlock = blockContainer.getBlock(input.block);
                 if (inputBlock.next) {
-                    this.args[input.name] = function* evaluate() {
+                    this.args[input.name] = function* evaluate () {
                         const backupThread = blockUtility.thread;
+                        // eslint-disable-next-line no-use-before-define
                         const res = yield* generate(
                             blockContainer,
                             input.block
@@ -61,16 +62,20 @@ class BlockCached {
                 // TODO: if blockFunction is not a generator, precalculate all params
                 this.compiled = this.blockFunction.bind(null, this.args, blockUtility);
             } else {
-                this.compiled = function* evaluate() {
+                // eslint-disable-next-line require-yield
+                this.compiled = function* evaluate () {
                     return this.blockFunction(this.args, blockUtility);
                 }.bind(this);
             }
         } else if (this.isHat) {
-            this.compiled = function* constant() {
+            // eslint-disable-next-line require-yield
+            this.compiled = function* constant () {
                 return true;
             };
         } else if (this.shadow) {
-            this.compiled = function* constant() {
+            // TODO: optimize it.
+            // eslint-disable-next-line require-yield
+            this.compiled = function* constant () {
                 return Object.values(this.args)[0].value;
             }.bind(this);
         } else throw new Error(`Error while finding opcode ${this.opcode}`);
@@ -78,92 +83,13 @@ class BlockCached {
 }
 
 class ScriptCached {
-    constructor(blockContainer, cached) {
+    constructor (blockContainer, cached) {
         this.topBlock = cached.id;
         this.block = cached;
-        if (!cached.next) {
-            this.compiled = function* command(thread) {
-                /** @type {import('./runtime')} */
-                const runtime = blockContainer.runtime;
-                let block = this.block;
-                let result;
-                    const cache =
-                        BlocksExecuteCache.getCached(
-                            blockContainer,
-                            block.id,
-                            BlockCached
-                        ) ??
-                        BlocksExecuteCache.getCached(
-                            runtime.flyoutBlocks,
-                            block.id,
-                            BlockCached
-                        );
-                    if (!blockContainer.forceNoGlow) {
-                        thread.requestScriptGlowInFrame = true;
-                    }
-                    thread.blockGlowInFrame = block.id;
-                    // const oldThread = blockUtility.thread;
-                    blockUtility.thread = thread;
-                    result = yield* cache.compiled();
-                    // blockUtility.thread = oldThread;
-                    if (thread.isKilled) throw KillThread;
-                    if (cache.isHat) {
-                        if (runtime.getIsEdgeActivatedHat(block.opcode)) {
-                            if (!thread.stackClick) {
-                                const hasOldEdgeValue =
-                                    thread.target.hasEdgeActivatedValue(
-                                        block.id
-                                    );
-                                const oldEdgeValue =
-                                    thread.target.updateEdgeActivatedValue(
-                                        block.id,
-                                        result
-                                    );
-                                const edgeWasActivated = hasOldEdgeValue
-                                    ? !oldEdgeValue && result
-                                    : result;
-                                if (!edgeWasActivated) {
-                                    return; // retire thread
-                                }
-                            }
-                        } else if (!result) {
-                            return; // retire thread
-                        }
-                        yield blockUtility.yield();
-                    }
-                    if (
-                        !(cache.isHat) &&
-                        typeof result !== "undefined" &&
-                        this.topBlock === thread.topBlock
-                    ) {
-                        if (thread.stackClick) {
-                            runtime.visualReport(block.id, result);
-                        }
-                        if (thread.updateMonitor) {
-                            const targetId = runtime.monitorBlocks.getBlock(
-                                block.id
-                            ).targetId;
-                            if (targetId && !runtime.getTargetById(targetId)) {
-                                // Target no longer exists
-                                return;
-                            }
-                            runtime.requestUpdateMonitor(
-                                Map({
-                                    id: block.id,
-                                    spriteName: targetId
-                                        ? runtime
-                                              .getTargetById(targetId)
-                                              .getName()
-                                        : null,
-                                    value: result,
-                                })
-                            );
-                        }
-                    }
-                    return cache.isHat ? void 0 : result;
-            }.bind(this);
-        } else {
-            this.compiled = function* substack(thread) {
+        // TODO: the algorithms here are similar.
+        // I am not sure if convert them into one function hurts performance or not.
+        if (cached.next) {
+            this.compiled = function* substack (thread) {
                 /** @type {import('./runtime')} */
                 const runtime = blockContainer.runtime;
                 let block = this.block;
@@ -185,10 +111,8 @@ class ScriptCached {
                         thread.requestScriptGlowInFrame = true;
                     }
                     thread.blockGlowInFrame = block.id;
-                    // const oldThread = blockUtility.thread;
                     blockUtility.thread = thread;
                     result = yield* cache.compiled();
-                    // blockUtility.thread = oldThread;
                     if (thread.isKilled) throw KillThread;
                     if (cache.isHat && firstTick) {
                         if (runtime.getIsEdgeActivatedHat(block.opcode)) {
@@ -202,9 +126,9 @@ class ScriptCached {
                                         block.id,
                                         result
                                     );
-                                const edgeWasActivated = hasOldEdgeValue
-                                    ? !oldEdgeValue && result
-                                    : result;
+                                const edgeWasActivated = hasOldEdgeValue ?
+                                    !oldEdgeValue && result :
+                                    result;
                                 if (!edgeWasActivated) {
                                     return; // retire thread
                                 }
@@ -222,13 +146,89 @@ class ScriptCached {
                     }
                 }
             }.bind(this);
+        } else {
+            this.compiled = function* command (thread) {
+                /** @type {import('./runtime')} */
+                const runtime = blockContainer.runtime;
+                const block = this.block;
+                const cache =
+                        BlocksExecuteCache.getCached(
+                            blockContainer,
+                            block.id,
+                            BlockCached
+                        ) ??
+                        BlocksExecuteCache.getCached(
+                            runtime.flyoutBlocks,
+                            block.id,
+                            BlockCached
+                        );
+                if (!blockContainer.forceNoGlow) {
+                    thread.requestScriptGlowInFrame = true;
+                }
+                thread.blockGlowInFrame = block.id;
+                blockUtility.thread = thread;
+                const result = yield* cache.compiled();
+                if (thread.isKilled) throw KillThread;
+                if (cache.isHat) {
+                    if (runtime.getIsEdgeActivatedHat(block.opcode)) {
+                        if (!thread.stackClick) {
+                            const hasOldEdgeValue =
+                                    thread.target.hasEdgeActivatedValue(
+                                        block.id
+                                    );
+                            const oldEdgeValue =
+                                    thread.target.updateEdgeActivatedValue(
+                                        block.id,
+                                        result
+                                    );
+                            const edgeWasActivated = hasOldEdgeValue ?
+                                !oldEdgeValue && result :
+                                result;
+                            if (!edgeWasActivated) {
+                                return; // retire thread
+                            }
+                        }
+                    } else if (!result) {
+                        return; // retire thread
+                    }
+                    yield blockUtility.yield();
+                }
+                if (
+                    !(cache.isHat) &&
+                        typeof result !== 'undefined' &&
+                        this.topBlock === thread.topBlock
+                ) {
+                    if (thread.stackClick) {
+                        runtime.visualReport(block.id, result);
+                    }
+                    if (thread.updateMonitor) {
+                        const targetId = runtime.monitorBlocks.getBlock(
+                            block.id
+                        ).targetId;
+                        if (targetId && !runtime.getTargetById(targetId)) {
+                            // Target no longer exists
+                            return;
+                        }
+                        runtime.requestUpdateMonitor(
+                            Map({
+                                id: block.id,
+                                spriteName: targetId ?
+                                    runtime
+                                        .getTargetById(targetId)
+                                        .getName() :
+                                    null,
+                                value: result
+                            })
+                        );
+                    }
+                }
+                return cache.isHat ? void 0 : result;
+            }.bind(this);
         }
     }
 }
 
 /**
- *
- * @param {Thread} thread
  * @param {import('./blocks')} blockContainer
  * @param {string} topBlockId
  * @returns

@@ -45,15 +45,11 @@ class Scratch3ProcedureBlocks {
 
         const procedureStack = context?.procStack ?? [];
 
+        // Check if the call is recursive.
+        // If so, set the thread to yield after pushing.
         const isRecursive = procedureStack.includes(definition); // This is configurable
 
         procedureStack.push(definition);
-
-        // TODO: check call recursive
-
-        // Check if the call is recursive.
-        // If so, set the thread to yield after pushing.
-        // const isRecursive = this.thread.isRecursiveCall(procedureCode);
 
         // To step to a procedure, we put its definition on the stack.
         // Execution for the thread will proceed through the definition hat
@@ -96,14 +92,15 @@ class Scratch3ProcedureBlocks {
             params,
             procStack: procedureStack
         });
-        const oldContext = context;
+        // eslint-disable-next-line require-atomic-updates
         thread.context = newContext;
         try {
             yield* generator(
                 thread
             );
         } finally {
-            thread.context = oldContext;
+            // eslint-disable-next-line require-atomic-updates
+            thread.context = context;
             procedureStack.pop();
         }
     }
