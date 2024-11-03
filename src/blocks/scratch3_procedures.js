@@ -88,10 +88,10 @@ class Scratch3ProcedureBlocks {
                 yield util.yield();
             }
         }
-        const newContext = Object.assign({}, context, {
+        const newContext = {...context,
             params,
             procStack: procedureStack
-        });
+        };
         // eslint-disable-next-line require-atomic-updates
         thread.context = newContext;
         try {

@@ -25,7 +25,7 @@ class BlockCached {
     constructor (blockContainer, cached) {
         /** @type {import('./runtime')} */
         const runtime = blockContainer.runtime;
-        this.args = Object.assign({}, cached.fields);
+        this.args = {...cached.fields};
         for (const input of Object.values(cached.inputs)) {
             if (input.block) {
                 const inputBlock = blockContainer.getBlock(input.block);
