@@ -23,7 +23,7 @@ const { KillThread } = require("./thread-status");
  */
 class BlockCached {
     constructor(blockContainer, cached) {
-        /** @type {@import('./runtime')} */
+        /** @type {import('./runtime')} */
         const runtime = blockContainer.runtime;
         this.args = Object.assign({}, cached.fields);
         for (const input of Object.values(cached.inputs)) {
@@ -58,16 +58,8 @@ class BlockCached {
         this.isHat = runtime.getIsHat(cached.opcode);
         if (this.blockFunction) {
             if (this.blockFunction instanceof function* () {}.constructor) {
-                this.compiled = function* evaluate() {
-                    // TODO: if blockFunction is not a generator, precalculate all params
-                    // const backupThread = blockUtility.thread;
-                    const result = yield* this.blockFunction(
-                        this.args,
-                        blockUtility
-                    );
-                    // blockUtility.thread = backupThread;
-                    return result;
-                }.bind(this);
+                // TODO: if blockFunction is not a generator, precalculate all params
+                this.compiled = this.blockFunction.bind(null, this.args, blockUtility);
             } else {
                 this.compiled = function* evaluate() {
                     return this.blockFunction(this.args, blockUtility);
@@ -242,6 +234,7 @@ class ScriptCached {
  * @returns
  */
 const generate = (blockContainer, topBlockId) => {
+    // TODO: live editing
     const cache =
         BlocksExecuteCache.getScriptCached(
             blockContainer,
