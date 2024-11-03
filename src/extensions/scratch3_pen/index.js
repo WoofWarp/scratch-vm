@@ -586,7 +586,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *setPenColorToColor (args, util) {
-        this._setPenColorToColor(yield* args.COLOR(), util.target);
+        const target = util.target;
+        this._setPenColorToColor(yield* args.COLOR(), target);
     }
     _setPenColorToColor (color, target) { // used by compiler
         const penState = this._getPenState(target);
@@ -686,7 +687,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *changePenSizeBy (args, util) {
-        this._changePenSizeBy(Cast.toNumber(yield* args.SIZE()), util.target);
+        const target = util.target;
+        this._changePenSizeBy(Cast.toNumber(yield* args.SIZE()), target);
     }
     _changePenSizeBy (size, target) { // used by compiler
         const penAttributes = this._getPenState(target).penAttributes;
@@ -700,7 +702,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *setPenSizeTo (args, util) {
-        this._setPenSizeTo(Cast.toNumber(yield* args.SIZE()), util.target);
+        const target = util.target;
+        this._setPenSizeTo(Cast.toNumber(yield* args.SIZE()), target);
     }
     _setPenSizeTo (size, target) { // used by compiler
         const penAttributes = this._getPenState(target).penAttributes;
@@ -715,7 +718,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *setPenHueToNumber (args, util) {
-        this._setPenHueToNumber(Cast.toNumber(yield* args.HUE()), util.target);
+        const target = util.target;
+        this._setPenHueToNumber(Cast.toNumber(yield* args.HUE()), target);
     }
     _setPenHueToNumber (hueValue, target) {
         const penState = this._getPenState(target);
@@ -732,7 +736,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *changePenHueBy (args, util) {
-        this._changePenHueBy(Cast.toNumber(yield* args.HUE()), util.target);
+        const target = util.target;
+        this._changePenHueBy(Cast.toNumber(yield* args.HUE()), target);
     }
     _changePenHueBy (hueChange, target) { // used by compiler
         const penState = this._getPenState(target);
@@ -752,7 +757,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *setPenShadeToNumber (args, util) {
-        this._setPenShadeToNumber(Cast.toNumber(yield* args.SHADE()), util.target);
+        const target = util.target;
+        this._setPenShadeToNumber(Cast.toNumber(yield* args.SHADE()), target);
     }
     _setPenShadeToNumber (shade, target) {
         const penState = this._getPenState(target);
@@ -776,7 +782,8 @@ class Scratch3PenBlocks {
      * @param {object} util - utility object provided by the runtime.
      */
     *changePenShadeBy (args, util) {
-        this._changePenShadeBy(yield* args.SHADE(), util.target);
+        const target = util.target;
+        this._changePenShadeBy(yield* args.SHADE(), target);
     }
     _changePenShadeBy (shade, target) {
         const penState = this._getPenState(target);

@@ -1,4 +1,5 @@
 const {StopThisScript} = require('../engine/thread-status');
+const Timer = require('../util/timer');
 
 class Scratch3ProcedureBlocks {
     constructor (runtime) {
@@ -25,6 +26,86 @@ class Scratch3ProcedureBlocks {
 
     *definition () {
         // No-op: execute the blocks.
+    }
+    
+    /**
+     * Step a procedure.
+     * @param {!string} procedureCode Procedure code of procedure to step to.
+     */
+    *startProcedure (procedureCode, params, thread, context, util) {
+        const generate = require('../engine/generate');
+        const Sequencer = require('../engine/sequencer');
+
+        const definition =
+            thread.target.blocks.getProcedureDefinition(procedureCode); // for recursive check
+        if (!definition) {
+            return;
+        }
+        const generator = generate(thread.target.blocks, definition);
+
+        const procedureStack = context?.procStack ?? [];
+
+        const isRecursive = procedureStack.includes(definition); // This is configurable
+
+        procedureStack.push(definition);
+
+        // TODO: check call recursive
+
+        // Check if the call is recursive.
+        // If so, set the thread to yield after pushing.
+        // const isRecursive = this.thread.isRecursiveCall(procedureCode);
+
+        // To step to a procedure, we put its definition on the stack.
+        // Execution for the thread will proceed through the definition hat
+        // and on to the main definition of the procedure.
+        // When that set of blocks finishes executing, it will be popped
+        // from the stack by the sequencer, returning control to the caller.
+        // thread.pushStack(definition);
+        // In known warp-mode threads, only yield when time is up.
+        if (
+            thread.warpTimer &&
+            thread.warpTimer.timeElapsed() > Sequencer.WARP_TIME
+        ) {
+            yield util.yield();
+        } else {
+            // Look for warp-mode flag on definition, and set the thread
+            // to warp-mode if needed.
+            const definitionBlock =
+                thread.target.blocks.getBlock(definition);
+            const innerBlock = thread.target.blocks.getBlock(
+                definitionBlock.inputs.custom_block.block
+            );
+            let doWarp = false;
+            if (innerBlock && innerBlock.mutation) {
+                const warp = innerBlock.mutation.warp;
+                if (typeof warp === 'boolean') {
+                    doWarp = warp;
+                } else if (typeof warp === 'string') {
+                    doWarp = JSON.parse(warp);
+                }
+            }
+            if (doWarp) {
+                thread.warpTimer = new Timer();
+                thread.warpTimer.start();
+            } else if (isRecursive) {
+                // In normal-mode threads, yield any time we have a recursive call.
+                yield util.yield();
+            }
+        }
+        const newContext = Object.assign({}, context, {
+            params,
+            procStack: procedureStack
+        });
+        const oldContext = context;
+        thread.context = newContext;
+        try {
+            yield* generator(
+                thread
+            );
+        } finally {
+            thread.context = oldContext;
+            procedureStack.pop();
+        }
     }
 
     *call (args, util) {
@@ -69,6 +150,9 @@ class Scratch3ProcedureBlocks {
         }
 
         const [paramNames, paramIds, paramDefaults] = paramNamesIdsAndDefaults;
+        
+        const thread = util.thread;
+        const context = thread.context;
 
         // Initialize params for the current stackFrame to {}, even if the procedure does
         // not take any arguments. This is so that `getParam` down the line does not look
@@ -88,16 +172,16 @@ class Scratch3ProcedureBlocks {
             return result;
         }
 
-        const warpTimer = util.thread.warpTimer;
+        const warpTimer = thread.warpTimer;
         try {
-            yield* util.startProcedure(procedureCode, params);
+            yield* this.startProcedure(procedureCode, params, thread, context, util);
         } catch (e) {
-            if (e instanceof StopThisScript) return e.value ?? '';
+            if (e === StopThisScript.instance) return e.value ?? '';
             throw e;
         } finally {
-            util.thread.warpTimer = warpTimer;
+            thread.warpTimer = warpTimer;
         }
-        return '';
+        if (isReporter) return '';
     }
 
     *return (args, util) {

@@ -5,9 +5,9 @@
 (function factoryXYZ(thread) { const target = thread.target; const runtime = target.runtime; const stage = runtime.getTargetForStage();
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 1",}, b0, false, false, "f", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 1"),}, b0);
 yield* thread.procedures["ZBlock A %s"]("Hai!!!");
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "k", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })
 
@@ -16,9 +16,9 @@ retire(); return;
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ_Block_A_ (p0) {
 if ((("" + p0).toLowerCase() === "Hai!!!".toLowerCase())) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass did not cast",}, b0, false, false, "m", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass did not cast"),}, b0);
 } else {
-yield* executeInCompatibilityLayer({"MESSAGE":"fail was casted",}, b0, false, false, "n", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("fail was casted"),}, b0);
 }
 return "";
 }; })

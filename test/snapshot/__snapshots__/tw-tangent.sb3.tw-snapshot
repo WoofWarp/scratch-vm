@@ -5,52 +5,52 @@
 (function factoryXYZ(thread) { const target = thread.target; const runtime = target.runtime; const stage = runtime.getTargetForStage();
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 15",}, b0, false, false, "p", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 15"),}, b0);
 if (compareEqual(tan(0), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 0",}, b0, false, false, "O", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 0"),}, b0);
 }
 if (((tan(90) || 0) === Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 90",}, b0, false, false, "G", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 90"),}, b0);
 }
 if (compareEqual(tan(180), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 180",}, b0, false, false, "I", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 180"),}, b0);
 }
 if (((tan(270) || 0) === -Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 270",}, b0, false, false, "K", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 270"),}, b0);
 }
 if (compareEqual(tan(360), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 360",}, b0, false, false, "M", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 360"),}, b0);
 }
 if (((tan(450) || 0) === Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 450",}, b0, false, false, "Q", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 450"),}, b0);
 }
 if (compareEqual(tan(540), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 540",}, b0, false, false, "S", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 540"),}, b0);
 }
 if (((tan(630) || 0) === -Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 630",}, b0, false, false, "U", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 630"),}, b0);
 }
 if (compareEqual(tan(720), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 720",}, b0, false, false, "W", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 720"),}, b0);
 }
 if (((tan(810) || 0) === Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass 810",}, b0, false, false, "Y", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass 810"),}, b0);
 }
 if (((tan(-90) || 0) === -Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass -90",}, b0, false, false, "0", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass -90"),}, b0);
 }
 if (compareEqual(tan(-180), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass -180",}, b0, false, false, "2", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass -180"),}, b0);
 }
 if (((tan(-270) || 0) === Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass -270",}, b0, false, false, "4", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass -270"),}, b0);
 }
 if (compareEqual(tan(-360), 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass -360",}, b0, false, false, "6", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass -360"),}, b0);
 }
 if (((tan(-450) || 0) === -Infinity)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass -450",}, b0, false, false, "9", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass -450"),}, b0);
 }
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "8", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })

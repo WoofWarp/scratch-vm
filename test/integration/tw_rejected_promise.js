@@ -26,11 +26,11 @@ class TestExtension {
             ]
         };
     }
-    command () {
-        return Promise.reject(new Error('Test error 1'));
+    *command () {
+        return yield Promise.reject(new Error('Test error 1'));
     }
-    reporter () {
-        return Promise.reject(new Error('Test error 2'));
+    *reporter () {
+        return yield Promise.reject(new Error('Test error 2'));
     }
 }
 

@@ -38,19 +38,31 @@ class Scratch3OperatorsBlocks {
     }
 
     *add (args) {
-        return Cast.toNumber(yield* args.NUM1()) + Cast.toNumber(yield* args.NUM2());
+        return (
+            Cast.toNumber(yield* args.NUM1()) +
+            Cast.toNumber(yield* args.NUM2())
+        );
     }
 
     *subtract (args) {
-        return Cast.toNumber(yield* args.NUM1()) - Cast.toNumber(yield* args.NUM2());
+        return (
+            Cast.toNumber(yield* args.NUM1()) -
+            Cast.toNumber(yield* args.NUM2())
+        );
     }
 
     *multiply (args) {
-        return Cast.toNumber(yield* args.NUM1()) * Cast.toNumber(yield* args.NUM2());
+        return (
+            Cast.toNumber(yield* args.NUM1()) *
+            Cast.toNumber(yield* args.NUM2())
+        );
     }
 
     *divide (args) {
-        return Cast.toNumber(yield* args.NUM1()) / Cast.toNumber(yield* args.NUM2());
+        return (
+            Cast.toNumber(yield* args.NUM1()) /
+            Cast.toNumber(yield* args.NUM2())
+        );
     }
 
     *lt (args) {
@@ -58,7 +70,9 @@ class Scratch3OperatorsBlocks {
     }
 
     *equals (args) {
-        return Cast.compare(yield* args.OPERAND1(), yield* args.OPERAND2()) === 0;
+        return (
+            Cast.compare(yield* args.OPERAND1(), yield* args.OPERAND2()) === 0
+        );
     }
 
     *gt (args) {
@@ -66,22 +80,30 @@ class Scratch3OperatorsBlocks {
     }
 
     *and (args) {
-        return Cast.toBoolean(yield* args.OPERAND1()) && Cast.toBoolean(yield* args.OPERAND2());
+        return (
+            args.OPERAND1 &&
+            Cast.toBoolean(yield* args.OPERAND1()) &&
+            args.OPERAND2 &&
+            Cast.toBoolean(yield* args.OPERAND2())
+        );
     }
 
     *or (args) {
-        return Cast.toBoolean(yield* args.OPERAND1()) || Cast.toBoolean(yield* args.OPERAND2());
+        return (
+            (args.OPERAND1 && Cast.toBoolean(yield* args.OPERAND1())) ||
+            (args.OPERAND2 && Cast.toBoolean(yield* args.OPERAND2()))
+        );
     }
 
     *not (args) {
-        if (!args.OPERAND) return true;
-        return !Cast.toBoolean(yield* args.OPERAND());
+        return !args.OPERAND || !Cast.toBoolean(yield* args.OPERAND());
     }
 
     *random (args) {
         return this._random(yield* args.FROM(), yield* args.TO());
     }
-    _random (from, to) { // used by compiler
+    _random (from, to) {
+        // used by compiler
         const nFrom = Cast.toNumber(from);
         const nTo = Cast.toNumber(to);
         const low = nFrom <= nTo ? nFrom : nTo;
@@ -89,13 +111,16 @@ class Scratch3OperatorsBlocks {
         if (low === high) return low;
         // If both arguments are ints, truncate the result to an int.
         if (Cast.isInt(from) && Cast.isInt(to)) {
-            return low + Math.floor(Math.random() * ((high + 1) - low));
+            return low + Math.floor(Math.random() * (high + 1 - low));
         }
         return (Math.random() * (high - low)) + low;
     }
 
     *join (args) {
-        return Cast.toString(yield* args.STRING1()) + Cast.toString(yield* args.STRING2());
+        return (
+            Cast.toString(yield* args.STRING1()) +
+            Cast.toString(yield* args.STRING2())
+        );
     }
 
     *letterOf (args) {
@@ -116,7 +141,9 @@ class Scratch3OperatorsBlocks {
         const format = function (string) {
             return Cast.toString(string).toLowerCase();
         };
-        return format(yield* args.STRING1()).includes(format(yield* args.STRING2()));
+        return format(yield* args.STRING1()).includes(
+            format(yield* args.STRING2())
+        );
     }
 
     *mod (args) {
@@ -136,20 +163,34 @@ class Scratch3OperatorsBlocks {
         const operator = Cast.toString(args.OPERATOR.value).toLowerCase();
         const n = Cast.toNumber(yield* args.NUM());
         switch (operator) {
-        case 'abs': return Math.abs(n);
-        case 'floor': return Math.floor(n);
-        case 'ceiling': return Math.ceil(n);
-        case 'sqrt': return Math.sqrt(n);
-        case 'sin': return Math.round(Math.sin((Math.PI * n) / 180) * 1e10) / 1e10;
-        case 'cos': return Math.round(Math.cos((Math.PI * n) / 180) * 1e10) / 1e10;
-        case 'tan': return MathUtil.tan(n);
-        case 'asin': return (Math.asin(n) * 180) / Math.PI;
-        case 'acos': return (Math.acos(n) * 180) / Math.PI;
-        case 'atan': return (Math.atan(n) * 180) / Math.PI;
-        case 'ln': return Math.log(n);
-        case 'log': return Math.log(n) / Math.LN10;
-        case 'e ^': return Math.exp(n);
-        case '10 ^': return Math.pow(10, n);
+        case 'abs':
+            return Math.abs(n);
+        case 'floor':
+            return Math.floor(n);
+        case 'ceiling':
+            return Math.ceil(n);
+        case 'sqrt':
+            return Math.sqrt(n);
+        case 'sin':
+            return Math.round(Math.sin((Math.PI * n) / 180) * 1e10) / 1e10;
+        case 'cos':
+            return Math.round(Math.cos((Math.PI * n) / 180) * 1e10) / 1e10;
+        case 'tan':
+            return MathUtil.tan(n);
+        case 'asin':
+            return (Math.asin(n) * 180) / Math.PI;
+        case 'acos':
+            return (Math.acos(n) * 180) / Math.PI;
+        case 'atan':
+            return (Math.atan(n) * 180) / Math.PI;
+        case 'ln':
+            return Math.log(n);
+        case 'log':
+            return Math.log(n) / Math.LN10;
+        case 'e ^':
+            return Math.exp(n);
+        case '10 ^':
+            return Math.pow(10, n);
         }
         return 0;
     }

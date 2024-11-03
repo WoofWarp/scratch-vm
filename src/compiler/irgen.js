@@ -617,7 +617,7 @@ class ScriptTreeGenerator {
             };
         case 'sensing_of': {
             const object = this.descendInputOfBlock(block, 'OBJECT');
-            this.script.yields = this.script.yields || object.kind !== 'constant'
+            this.script.yields = this.script.yields || object.kind !== 'constant';
             return {
                 kind: 'sensing.of',
                 property: block.fields.PROPERTY.value,

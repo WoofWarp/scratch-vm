@@ -136,18 +136,16 @@ class Scratch3ControlBlocks {
     *if (args, util) {
         if (args.CONDITION && Cast.toBoolean(yield* args.CONDITION())) {
             if (args.SUBSTACK) yield* args.SUBSTACK();
-            else util.yield();
+            else yield util.yield();
         }
     }
 
     *ifElse (args, util) {
         if (args.CONDITION && Cast.toBoolean(yield* args.CONDITION())) {
             if (args.SUBSTACK) yield* args.SUBSTACK();
-            else util.yield();
-        } else {
-            if (args.SUBSTACK2) yield* args.SUBSTACK2();
-            else util.yield();
-        }
+            else yield util.yield();
+        } else if (args.SUBSTACK2) yield* args.SUBSTACK2();
+        else yield util.yield();
     }
 
     stop (args, util) {
@@ -163,7 +161,8 @@ class Scratch3ControlBlocks {
     }
 
     *createClone (args, util) {
-        this._createClone(Cast.toString(yield* args.CLONE_OPTION()), util.target);
+        const target = util.target;
+        this._createClone(Cast.toString(yield* args.CLONE_OPTION()), target);
     }
     _createClone (cloneOption, target) { // used by compiler
         // Set clone target
@@ -188,9 +187,10 @@ class Scratch3ControlBlocks {
     }
 
     deleteClone (args, util) {
-        if (util.target.isOriginal) return;
-        this.runtime.disposeTarget(util.target);
-        this.runtime.stopForTarget(util.target);
+        const target = util.target;
+        if (target.isOriginal) return;
+        this.runtime.disposeTarget(target);
+        this.runtime.stopForTarget(target);
     }
 
     getCounter () {

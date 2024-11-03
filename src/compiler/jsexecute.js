@@ -11,8 +11,13 @@ const globalState = {
     Timer: require('../util/timer'),
     Cast: require('../util/cast'),
     log: require('../util/log'),
-    blockUtility: require('./compat-block-utility'),
-    thread: null
+    blockUtility: require('../engine/block-utility-instance'),
+    get thread() {
+        return globalState.blockUtility.thread;
+    },
+    set thread(v) {
+        globalState.blockUtility.thread = v;
+    }
 };
 
 let baseRuntime = '';
@@ -117,8 +122,6 @@ const isPromise = value => (
 const executeInCompatibilityLayer = function*(inputs, blockFunction) {
     const thread = globalState.thread;
     const blockUtility = globalState.blockUtility;
-
-    blockUtility.init(thread);
 
     return blockFunction instanceof function*(){}.constructor ? yield* blockFunction(inputs, blockUtility) : blockFunction(inputs, blockUtility);
 }`;
@@ -519,7 +522,6 @@ runtimeFunctions.yieldThenCallGenerator = `const yieldThenCallGenerator = functi
  * @param {Thread} thread The thread to step.
  */
 const execute = (thread, promiseResult) => {
-    globalState.thread = thread;
     if (promiseResult && promiseResult[0] !== 0) {
         if (promiseResult[0] === 1) {
             return thread.generator.next(promiseResult[1]);

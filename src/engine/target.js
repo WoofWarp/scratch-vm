@@ -31,7 +31,7 @@ class Target extends EventEmitter {
 
         /**
          * Reference to the runtime.
-         * @type {Runtime}
+         * @type {import('./runtime')}
          */
         this.runtime = runtime;
         /**

@@ -2247,10 +2247,9 @@ class Runtime extends EventEmitter {
             if (!thread.isCompiled || thread.executableHat) {
                 // It is quite likely that we are currently executing a block, so make sure
                 // that we leave the compiler's state intact at the end.
-                // TODO: woof: unite global state with interpreter
-                compilerExecute.saveGlobalState();
+                // compilerExecute.saveGlobalState();
                 thread.step();
-                compilerExecute.restoreGlobalState();
+                // compilerExecute.restoreGlobalState();
             }
             // } else {
             //     execute(this.sequencer, thread);
@@ -2926,7 +2925,7 @@ class Runtime extends EventEmitter {
             if (this.getIsHat(topBlock.opcode)) {
                 const thread = new Thread(topBlockId);
                 thread.target = target;
-                thread.blockContainer = target.blockContainer;
+                thread.blockContainer = target.blocks;
                 thread.compile(true);
             }
         });

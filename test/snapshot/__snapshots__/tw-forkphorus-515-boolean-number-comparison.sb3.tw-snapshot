@@ -5,19 +5,19 @@
 (function factoryXYZ(thread) { const target = thread.target; const runtime = target.runtime; const stage = runtime.getTargetForStage();
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 4",}, b0, false, false, "i", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 4"),}, b0);
 if (compareGreaterThan(("something".toLowerCase() === "something".toLowerCase()), ("0" + ""))) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "k", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
 if (compareLessThan(("something".toLowerCase() === "else".toLowerCase()), ("1" + ""))) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "m", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
 if (compareGreaterThan(("something".toLowerCase() === "something".toLowerCase()), (0 + 0))) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "n", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
 if (compareLessThan(("something".toLowerCase() === "else".toLowerCase()), (1 + 0))) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "o", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "l", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })

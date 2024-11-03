@@ -246,23 +246,25 @@ class Scratch3TranslateBlocks {
      * @param {object} args - the block arguments.
      * @return {Promise} - a promise that resolves after the response from the translate server.
      */
-    getTranslate (args) {
+    *getTranslate (args) {
+        const words = yield* args.WORDS();
+        const language = yield* args.LANGUAGE();
         // If the text contains only digits 0-9 and nothing else, return it without
         // making a request.
-        if (/^\d+$/.test(args.WORDS)) return Promise.resolve(args.WORDS);
+        if (/^\d+$/.test(words)) return yield Promise.resolve(words);
 
         // Don't remake the request if we already have the value.
-        if (this._lastTextTranslated === args.WORDS &&
-            this._lastLangTranslated === args.LANGUAGE) {
+        if (this._lastTextTranslated === words &&
+            this._lastLangTranslated === language) {
             return this._translateResult;
         }
 
-        const lang = this.getLanguageCodeFromArg(args.LANGUAGE);
+        const lang = this.getLanguageCodeFromArg(language);
 
         let urlBase = `${serverURL}translate?language=`;
         urlBase += lang;
         urlBase += '&text=';
-        urlBase += encodeURIComponent(args.WORDS);
+        urlBase += encodeURIComponent(words);
 
         const tempThis = this;
         const translatePromise = fetchWithTimeout(urlBase, {}, serverTimeoutMs)
@@ -272,15 +274,15 @@ class Scratch3TranslateBlocks {
                 tempThis._translateResult = translated;
                 // Cache what we just translated so we don't keep making the
                 // same call over and over.
-                tempThis._lastTextTranslated = args.WORDS;
-                tempThis._lastLangTranslated = args.LANGUAGE;
+                tempThis._lastTextTranslated = words;
+                tempThis._lastLangTranslated = language;
                 return translated;
             })
             .catch(err => {
                 log.warn(`error fetching translate result! ${err}`);
-                return args.WORDS;
+                return words;
             });
-        return translatePromise;
+        return yield translatePromise;
     }
 }
 module.exports = Scratch3TranslateBlocks;

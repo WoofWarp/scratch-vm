@@ -11,12 +11,12 @@ b0.value = ((+b0.value || 0) + 1);
 thread.timer = timer();
 var a0 = Math.max(0, 1000 * -1);
 runtime.requestRedraw();
-yield;
+yield globalState.blockUtility.yield();
 while (thread.timer.timeElapsed() < a0) {
-yield;
+yield globalState.blockUtility.yield();
 }
 thread.timer = null;
-yield;
+yield globalState.blockUtility.yield();
 }
 retire(); return;
 }; })
@@ -25,10 +25,10 @@ retire(); return;
 (function factoryXYZ(thread) { const target = thread.target; const runtime = target.runtime; const stage = runtime.getTargetForStage();
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 3",}, b0, false, false, "k", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 3"),}, b0);
 yield* thread.procedures["Znon warp"]();
 runtime.stopForTarget(target, thread);
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "N", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })
 
@@ -42,33 +42,33 @@ for (var a0 = 5; a0 >= 0.5; a0--) {
 thread.timer = timer();
 var a1 = Math.max(0, 1000 * 0);
 runtime.requestRedraw();
-yield;
+yield globalState.blockUtility.yield();
 while (thread.timer.timeElapsed() < a1) {
-yield;
+yield globalState.blockUtility.yield();
 }
 thread.timer = null;
-yield;
+yield globalState.blockUtility.yield();
 }
 if (((+b0.value || 0) === 5)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass non warp 1",}, b1, false, false, "R", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass non warp 1"),}, b1);
 }
 if ((("" + (yield* thread.procedures["Wverify runs warp %s"]((yield* thread.procedures["Zverify runs non warp %s"]((yield* thread.procedures["Wverify runs warp %s"]("abc"))))))).toLowerCase() === "warp: non warp: warp: abc".toLowerCase())) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass non warp and warp mix",}, b1, false, false, "S", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass non warp and warp mix"),}, b1);
 }
 b0.value = 0;
 for (var a2 = 5; a2 >= 0.5; a2--) {
 thread.timer = timer();
 var a3 = Math.max(0, 1000 * 0);
 runtime.requestRedraw();
-yield;
+yield globalState.blockUtility.yield();
 while (thread.timer.timeElapsed() < a3) {
-yield;
+yield globalState.blockUtility.yield();
 }
 thread.timer = null;
-yield;
+yield globalState.blockUtility.yield();
 }
 if (((+b0.value || 0) === 5)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass non warp 2",}, b1, false, false, "W", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass non warp 2"),}, b1);
 }
 return "";
 }; })
@@ -84,12 +84,12 @@ thread.timer = timer();
 var a1 = Math.max(0, 1000 * 0);
 runtime.requestRedraw();
 while (thread.timer.timeElapsed() < a1) {
-if (isStuck()) yield;
+if (isStuck()) yield globalState.blockUtility.yield();
 }
 thread.timer = null;
 }
 if (!compareEqual(b0.value, 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"fail did not run warp",}, b1, true, false, "Z", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("fail did not run warp"),}, b1);
 }
 return ("warp: " + ("" + p0));
 return "";
@@ -105,15 +105,15 @@ for (var a0 = 5; a0 >= 0.5; a0--) {
 thread.timer = timer();
 var a1 = Math.max(0, 1000 * 0);
 runtime.requestRedraw();
-yield;
+yield globalState.blockUtility.yield();
 while (thread.timer.timeElapsed() < a1) {
-yield;
+yield globalState.blockUtility.yield();
 }
 thread.timer = null;
-yield;
+yield globalState.blockUtility.yield();
 }
 if (compareEqual(b0.value, 0)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"fail ran warp",}, b1, false, false, "L", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("fail ran warp"),}, b1);
 }
 return ("non warp: " + ("" + p0));
 return "";

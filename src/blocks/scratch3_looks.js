@@ -377,8 +377,9 @@ class Scratch3LooksBlocks {
 
     *say (args, util) {
         // @TODO in 2.0 calling say/think resets the right/left bias of the bubble
+        const target = util.target;
         const message = yield* args.MESSAGE();
-        this._say(message, util.target);
+        this._say(message, target);
     }
     _say (message, target) {
         // used by compiler
@@ -624,35 +625,40 @@ class Scratch3LooksBlocks {
     }
 
     *changeEffect (args, util) {
+        const target = util.target;
         const effect = Cast.toString(args.EFFECT.value).toLowerCase();
         const change = Cast.toNumber(yield* args.CHANGE());
-        if (!Object.prototype.hasOwnProperty.call(util.target.effects, effect)) {
+        if (!Object.prototype.hasOwnProperty.call(target.effects, effect)) {
             return;
         }
-        let newValue = change + util.target.effects[effect];
+        let newValue = change + target.effects[effect];
         newValue = this.clampEffect(effect, newValue);
-        util.target.setEffect(effect, newValue);
+        target.setEffect(effect, newValue);
     }
 
     *setEffect (args, util) {
+        const target = util.target;
         const effect = Cast.toString(args.EFFECT.value).toLowerCase();
         let value = Cast.toNumber(yield* args.VALUE());
         value = this.clampEffect(effect, value);
-        util.target.setEffect(effect, value);
+        target.setEffect(effect, value);
     }
 
     clearEffects (args, util) {
-        util.target.clearEffects();
+        const target = util.target;
+        target.clearEffects();
     }
 
     *changeSize (args, util) {
+        const target = util.target;
         const change = Cast.toNumber(yield* args.CHANGE());
-        util.target.setSize(util.target.size + change);
+        target.setSize(target.size + change);
     }
 
     *setSize (args, util) {
+        const target = util.target;
         const size = Cast.toNumber(yield* args.SIZE());
-        util.target.setSize(size);
+        target.setSize(size);
     }
 
     goToFrontBack (args, util) {
@@ -666,11 +672,12 @@ class Scratch3LooksBlocks {
     }
 
     *goForwardBackwardLayers (args, util) {
-        if (!util.target.isStage) {
+        const target = util.target;
+        if (!target.isStage) {
             if (args.FORWARD_BACKWARD.value === 'forward') {
-                util.target.goForwardLayers(Cast.toNumber(yield* args.NUM()));
+                target.goForwardLayers(Cast.toNumber(yield* args.NUM()));
             } else {
-                util.target.goBackwardLayers(Cast.toNumber(yield* args.NUM()));
+                target.goBackwardLayers(Cast.toNumber(yield* args.NUM()));
             }
         }
     }

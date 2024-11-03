@@ -182,22 +182,26 @@ class Scratch3SensingBlocks {
     }
 
     *touchingObject (args, util) {
-        return util.target.isTouchingObject(yield* args.TOUCHINGOBJECTMENU());
+        const target = util.target;
+        return target.isTouchingObject(yield* args.TOUCHINGOBJECTMENU());
     }
 
     *touchingColor (args, util) {
+        const target = util.target;
         const color = Cast.toRgbColorList(yield* args.COLOR());
-        return util.target.isTouchingColor(color);
+        return target.isTouchingColor(color);
     }
 
     *colorTouchingColor (args, util) {
+        const target = util.target;
         const maskColor = Cast.toRgbColorList(yield* args.COLOR());
         const targetColor = Cast.toRgbColorList(yield* args.COLOR2());
-        return util.target.colorIsTouchingColor(targetColor, maskColor);
+        return target.colorIsTouchingColor(targetColor, maskColor);
     }
 
     *distanceTo (args, util) {
-        if (util.target.isStage) return 10000;
+        const target = util.target;
+        if (target.isStage) return 10000;
 
         let targetX = 0;
         let targetY = 0;
@@ -215,8 +219,8 @@ class Scratch3SensingBlocks {
             targetY = distTarget.y;
         }
 
-        const dx = util.target.x - targetX;
-        const dy = util.target.y - targetY;
+        const dx = target.x - targetX;
+        const dy = target.y - targetY;
         return Math.sqrt((dx * dx) + (dy * dy));
     }
 

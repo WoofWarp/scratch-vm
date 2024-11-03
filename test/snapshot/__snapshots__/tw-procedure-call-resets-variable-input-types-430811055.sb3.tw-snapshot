@@ -6,13 +6,13 @@
 const b0 = runtime.getOpcodeFunction("looks_say");
 const b1 = stage.variables["`jEk@4|i[#Fk?(8x)AV.-my variable"];
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 1",}, b0, false, false, "qf{MD}-f+l?U+)KA#Vnm", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 1"),}, b0);
 b1.value = "";
 thread.procedures["Zdo something"]();
 if (!compareEqual(b1.value, "")) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "Sgf_#7|GOpx!R]?Q3]$s", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, ",vD-ZG7f{]FoJ`,))JWh", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })
 

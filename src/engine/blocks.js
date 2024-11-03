@@ -70,6 +70,8 @@ class Blocks {
              */
             _executeCached: {},
 
+            _scriptCached: {},
+
             /**
              * A cache of block IDs and targets to start threads on as they are
              * actively monitored.
@@ -619,6 +621,7 @@ class Blocks {
         this._cache.procedureParamNames = {};
         this._cache.procedureDefinitions = {};
         this._cache._executeCached = {};
+        this._cache._scriptCached = {};
         this._cache._monitored = null;
         this._cache.scripts = {};
         this._cache.compiledScripts = {};
@@ -1351,24 +1354,31 @@ BlocksExecuteCache.getCached = function (blocks, blockId, CacheType) {
     if (typeof block === 'undefined') return null;
 
     if (typeof CacheType === 'undefined') {
-        cached = {
-            id: blockId,
-            opcode: blocks.getOpcode(block),
-            fields: blocks.getFields(block),
-            inputs: blocks.getInputs(block),
-            mutation: blocks.getMutation(block)
-        };
+        throw new Error('Invalid cache type');
     } else {
-        cached = new CacheType(blocks, {
-            id: blockId,
-            opcode: blocks.getOpcode(block),
-            fields: blocks.getFields(block),
-            inputs: blocks.getInputs(block),
-            mutation: blocks.getMutation(block)
-        });
+        cached = new CacheType(blocks, block);
     }
 
     blocks._cache._executeCached[blockId] = cached;
+    return cached;
+};
+
+BlocksExecuteCache.getScriptCached = function (blocks, blockId, CacheType) {
+    let cached = blocks._cache._scriptCached[blockId];
+    if (typeof cached !== 'undefined') {
+        return cached;
+    }
+
+    const block = blocks.getBlock(blockId);
+    if (typeof block === 'undefined') return null;
+
+    if (typeof CacheType === 'undefined') {
+        throw new Error('Invalid cache type');
+    } else {
+        cached = new CacheType(blocks, block);
+    }
+
+    blocks._cache._scriptCached[blockId] = cached;
     return cached;
 };
 

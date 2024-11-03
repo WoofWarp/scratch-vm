@@ -1,5 +1,6 @@
 const Timer = require('../util/timer');
 const Thread = require('./thread');
+const blockUtility = require('./block-utility-instance');
 // const execute = require("./execute.js");
 // const compilerExecute = require("../compiler/jsexecute");
 
@@ -52,8 +53,17 @@ class Sequencer {
          * @type {!import('./runtime')}
          */
         this.runtime = runtime;
+    }
 
-        this.activeThread = null;
+    get activeThread () {
+        return blockUtility.thread;
+    }
+
+    /**
+     * @deprecated For compatibility.
+     */
+    set activeThread (v) {
+        blockUtility.thread = v;
     }
 
     /**
@@ -106,7 +116,7 @@ class Sequencer {
             // Attempt to run each thread one time.
             const threads = this.runtime.threads;
             for (let i = 0; i < threads.length; i++) {
-                const activeThread = (this.activeThread = threads[i]);
+                const activeThread = (blockUtility.thread = threads[i]);
                 // Check if the thread is done so it is not executed.
                 if (
                     activeThread.status === Thread.STATUS_DONE
@@ -139,7 +149,7 @@ class Sequencer {
                         this.runtime.profiler.increment(stepThreadProfilerId);
                     }
                     this.stepThread(activeThread);
-                    // if (activeThread.warpTimer) activeThread.warpTimer.startTime = Timer.nowObj.now();
+                    if (activeThread.warpTimer) activeThread.warpTimer.startTime = Timer.nowObj.now();
                 }
                 if (activeThread.status === Thread.STATUS_RUNNING) {
                     numActiveThreads++;
@@ -178,7 +188,7 @@ class Sequencer {
             }
         }
 
-        this.activeThread = null;
+        blockUtility.thread = null;
 
         return doneThreads;
     }
@@ -238,7 +248,8 @@ class Sequencer {
                     thread.warpTimer.timeElapsed() <= Sequencer.WARP_TIME
                 ) {
                     continue;
-                } else return;
+                }
+                return;
             } else if (thread.status === Thread.STATUS_PROMISE_WAIT) {
                 // A promise was returned by the primitive. Yield the thread
                 // until the promise resolves. Promise resolution should reset

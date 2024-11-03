@@ -5,9 +5,9 @@
 (function factoryXYZ(thread) { const target = thread.target; const runtime = target.runtime; const stage = runtime.getTargetForStage();
 const b0 = runtime.getOpcodeFunction("looks_say");
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 0",}, b0, false, false, "ae", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 0"),}, b0);
 yield* thread.procedures["Wrun test"]();
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "aZ", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })
 
@@ -30,20 +30,20 @@ for (var a1 = b2.value.length; a1 >= 0.5; a1--) {
 b3.value = ((+b3.value || 0) + 1);
 b0.value = ((+b0.value || 0) + 1);
 if (!compareEqual(compareGreaterThan(listGet(b2.value, b1.value), (b2.value[((b3.value || 0) | 0) - 1] ?? "")), (b4.value[((b0.value || 0) | 0) - 1] ?? ""))) {
-yield* executeInCompatibilityLayer({"MESSAGE":("fail " + (("" + listGet(b2.value, b1.value)) + (" should be > " + ("" + listGet(b2.value, b3.value))))),}, b5, true, false, "]", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator(("fail " + (("" + listGet(b2.value, b1.value)) + (" should be > " + ("" + listGet(b2.value, b3.value)))))),}, b5);
 }
 b0.value = ((+b0.value || 0) + 1);
 if (!compareEqual(compareEqual(listGet(b2.value, b1.value), listGet(b2.value, b3.value)), (b4.value[((b0.value || 0) | 0) - 1] ?? ""))) {
-yield* executeInCompatibilityLayer({"MESSAGE":("fail " + (("" + listGet(b2.value, b1.value)) + (" should be = " + ("" + listGet(b2.value, b3.value))))),}, b5, true, false, "|", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator(("fail " + (("" + listGet(b2.value, b1.value)) + (" should be = " + ("" + listGet(b2.value, b3.value)))))),}, b5);
 }
 b0.value = ((+b0.value || 0) + 1);
 if (!compareEqual(compareLessThan(listGet(b2.value, b1.value), listGet(b2.value, b3.value)), (b4.value[((b0.value || 0) | 0) - 1] ?? ""))) {
-yield* executeInCompatibilityLayer({"MESSAGE":("fail " + (("" + listGet(b2.value, b1.value)) + (" should be < " + ("" + listGet(b2.value, b3.value))))),}, b5, true, true, "ab", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator(("fail " + (("" + listGet(b2.value, b1.value)) + (" should be < " + ("" + listGet(b2.value, b3.value)))))),}, b5);
 if (hasResumedFromPromise) {hasResumedFromPromise = false;continue;}
 }
-if (isStuck()) yield;
+if (isStuck()) yield globalState.blockUtility.yield();
 }
-if (isStuck()) yield;
+if (isStuck()) yield globalState.blockUtility.yield();
 }
 return "";
 }; })

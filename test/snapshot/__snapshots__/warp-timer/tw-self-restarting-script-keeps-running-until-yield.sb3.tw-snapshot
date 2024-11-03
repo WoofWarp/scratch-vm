@@ -7,7 +7,7 @@ const b0 = runtime.getOpcodeFunction("looks_say");
 const b1 = stage.variables["G{NQ*NXG*qzywe1Q3?FM"];
 const b2 = stage.variables["`jEk@4|i[#Fk?(8x)AV.-my variable"];
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 1",}, b0, false, false, "c", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 1"),}, b0);
 b1.value = 0;
 b2.value = 0;
 startHats("event_whenbroadcastreceived", { BROADCAST_OPTION: "message1" });
@@ -25,14 +25,14 @@ b0.value = 1;
 startHats("event_whenbroadcastreceived", { BROADCAST_OPTION: "message1" });
 b1.value = 1;
 for (var a0 = 1; a0 >= 0.5; a0--) {
-yield;
+yield globalState.blockUtility.yield();
 }
 b1.value = 2;
 } else {
 if (((+b1.value || 0) === 1)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b2, false, false, "p", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b2);
 }
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b2, false, false, "n", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b2);
 }
 retire(); return;
 }; })

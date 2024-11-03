@@ -6,22 +6,22 @@
 const b0 = runtime.getOpcodeFunction("looks_say");
 const b1 = stage.variables["`jEk@4|i[#Fk?(8x)AV.-my variable"];
 return function* genXYZ () {
-yield* executeInCompatibilityLayer({"MESSAGE":"plan 1",}, b0, false, false, "aQ(Y!Bs3;[rV^Q%AQ,NX", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("plan 1"),}, b0);
 b1.value = 0;
 startHats("event_whenbroadcastreceived", { BROADCAST_OPTION: "message1" });
 startHats("event_whenbroadcastreceived", { BROADCAST_OPTION: "message1" });
 thread.timer = timer();
 var a0 = Math.max(0, 1000 * 0);
 runtime.requestRedraw();
-yield;
+yield globalState.blockUtility.yield();
 while (thread.timer.timeElapsed() < a0) {
-yield;
+yield globalState.blockUtility.yield();
 }
 thread.timer = null;
 if (((+b1.value || 0) === 1)) {
-yield* executeInCompatibilityLayer({"MESSAGE":"pass",}, b0, false, false, "`SX*FG*Lwo*0_T=box-@", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("pass"),}, b0);
 }
-yield* executeInCompatibilityLayer({"MESSAGE":"end",}, b0, false, false, "|#`zzPA_x%{`FyIAQhb4", null);
+yield* executeInCompatibilityLayer({"MESSAGE":toGenerator("end"),}, b0);
 retire(); return;
 }; })
 

@@ -270,24 +270,26 @@ class Scratch3SoundBlocks {
     }
 
     *setEffect (args, util) {
+        const target = util.target;
         return yield this._updateEffect({
             EFFECT: args.EFFECT.value,
             VALUE: yield* args.VALUE()
-        }, util, false);
+        }, target, false);
     }
 
     *changeEffect (args, util) {
+        const target = util.target;
         return yield this._updateEffect({
             EFFECT: args.EFFECT.value,
             VALUE: yield* args.VALUE()
-        }, util, true);
+        }, target, true);
     }
 
-    _updateEffect (args, util, change) {
+    _updateEffect (args, target, change) {
         const effect = Cast.toString(args.EFFECT).toLowerCase();
         const value = Cast.toNumber(args.VALUE);
 
-        const soundState = this._getSoundState(util.target);
+        const soundState = this._getSoundState(target);
         if (!Object.prototype.hasOwnProperty.call(soundState.effects, effect)) return;
 
         if (change) {
@@ -302,7 +304,7 @@ class Scratch3SoundBlocks {
             Scratch3SoundBlocks.LARGER_EFFECT_RANGE[effect];
         soundState.effects[effect] = MathUtil.clamp(soundState.effects[effect], min, max);
 
-        this._syncEffectsForTarget(util.target);
+        this._syncEffectsForTarget(target);
         if (miscLimits) {
             // Yield until the next tick.
             return Promise.resolve();
@@ -347,7 +349,8 @@ class Scratch3SoundBlocks {
     }
 
     *changeVolume (args, util) {
-        const volume = Cast.toNumber(yield* args.VOLUME()) + util.target.volume;
+        const target = util.target;
+        const volume = Cast.toNumber(yield* args.VOLUME()) + target.volume;
         return this._updateVolume(volume, util);
     }
 

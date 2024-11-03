@@ -64,7 +64,8 @@ class Scratch3EventBlocks {
     }
 
     *touchingObject (args, util) {
-        return util.target.isTouchingObject(yield* args.TOUCHINGOBJECTMENU());
+        const target = util.target;
+        return target.isTouchingObject(yield* args.TOUCHINGOBJECTMENU());
     }
 
     *hatGreaterThanPredicate (args, util) {
@@ -92,7 +93,7 @@ class Scratch3EventBlocks {
                 .getTargetForStage()
                 .lookupBroadcastMsg(
                     val.id,
-                    val.name
+                    val.value
                 );
         } else {
             broadcastVar = util.runtime
@@ -107,7 +108,7 @@ class Scratch3EventBlocks {
         }
     }
 
-    *broadcastMenu (args) {
+    broadcastMenu (args) {
         return args.BROADCAST_OPTION;
     }
 
@@ -119,7 +120,7 @@ class Scratch3EventBlocks {
                 .getTargetForStage()
                 .lookupBroadcastMsg(
                     val.id,
-                    val.name
+                    val.value
                 );
         } else {
             broadcastVar = util.runtime

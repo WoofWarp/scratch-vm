@@ -1,7 +1,8 @@
 const log = require('../util/log');
-const compilerExecute = require('../compiler/jsexecute');
+const execute = require('../compiler/jsexecute');
 const generate = require('./generate');
-const {StopThisScript, Yield, YieldTick} = require('./thread-status');
+const {StopThisScript, Yield, YieldTick, KillThread} = require('./thread-status');
+const blockUtility = require('./block-utility-instance');
 
 /**
  * Utility function to determine if a value is a Promise.
@@ -33,7 +34,7 @@ class Thread {
          * Status of the thread, one of three states (below)
          * @type {number}
          */
-        this._status = 0; /* Thread.STATUS_RUNNING */
+        this._status = Thread.STATUS_RUNNING; /* Thread.STATUS_RUNNING */
 
         /**
          * Whether the thread is killed in the middle of execution.
@@ -49,7 +50,7 @@ class Thread {
 
         /**
          * The Blocks this thread will execute.
-         * @type {Blocks}
+         * @type {import('./blocks')}
          */
         this.blockContainer = null;
 
@@ -93,7 +94,8 @@ class Thread {
          */
         this.procedures = null;
         this.executableHat = false;
-        this.compatibilityStackFrame = null;
+
+        this.context = null;
     }
 
     /**
@@ -152,16 +154,19 @@ class Thread {
     }
 
     step () {
+        if (!this.generator) return;
         if (this.status === Thread.STATUS_YIELD) {
             this._status = Thread.STATUS_RUNNING;
         }
         while (this.status === Thread.STATUS_RUNNING) {
+            const oldThread = blockUtility.thread;
             try {
-                const v = compilerExecute(this, this.promiseResult);
+                blockUtility.thread = this;
+                const v = execute(this, this.promiseResult);
                 this.promiseResult = [0, null];
-                if (v.value instanceof Yield) {
+                if (v.value === Yield) {
                     this._status = Thread.STATUS_YIELD;
-                } else if (v.value instanceof YieldTick) {
+                } else if (v.value === YieldTick) {
                     this._status = Thread.STATUS_YIELD_TICK;
                 } else if (isPromise(v.value)) {
                     // enter STATUS_PROMISE_WAIT and yield
@@ -178,18 +183,18 @@ class Thread {
                             this._status = Thread.STATUS_RUNNING;
                         }
                     );
-                    return;
-                }
-                this.promiseResult = [1, v.value];
+                } else this.promiseResult = [1, v.value];
                 if (v.done) {
                     this.kill();
                 }
             } catch (e) {
-                if (e instanceof StopThisScript) {
+                if (e === KillThread || e === StopThisScript.instance) {
                     this.kill();
                     return;
                 }
                 throw e;
+            } finally {
+                blockUtility.thread = oldThread;
             }
         }
     }
@@ -386,6 +391,7 @@ class Thread {
     }
 
     kill () {
+        this.context = null;
         this.requestScriptGlowInFrame = false;
         this._status = Thread.STATUS_DONE;
         this.procedures = null;
