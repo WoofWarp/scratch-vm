@@ -6,6 +6,11 @@ const {Map} = require('immutable');
 const blockUtility = require('./block-utility-instance');
 const {KillThread} = require('./thread-status');
 
+// TODO: create reusuable generators framework
+const reusuableObject = {
+    done: true,
+    value: null
+};
 /**
  * A execute.js internal representation of a block to reduce the time spent in
  * execute as the same blocks are called the most.
@@ -30,17 +35,14 @@ class BlockCached {
             if (input.block) {
                 const inputBlock = blockContainer.getBlock(input.block);
                 if (inputBlock.next) {
-                    this.args[input.name] = function* evaluate () {
-                        const backupThread = blockUtility.thread;
+                    this.args[input.name] = function evaluate () {
                         // eslint-disable-next-line no-use-before-define
-                        const res = yield* generate(
+                        return generate(
                             blockContainer,
                             input.block
                         )(
-                            backupThread
+                            blockUtility.thread
                         );
-                        // blockUtility.thread = backupThread;
-                        return res;
                     };
                 } else {
                     const cache = BlocksExecuteCache.getCached(
@@ -58,14 +60,24 @@ class BlockCached {
         this.shadow = cached.shadow;
         this.isHat = runtime.getIsHat(cached.opcode);
         if (this.blockFunction) {
+            // TODO: refactor
             if (this.blockFunction instanceof function* () {}.constructor) {
                 // TODO: if blockFunction is not a generator, precalculate all params
                 this.compiled = this.blockFunction.bind(null, this.args, blockUtility);
             } else {
-                // eslint-disable-next-line require-yield
-                this.compiled = function* evaluate () {
-                    return this.blockFunction(this.args, blockUtility);
-                }.bind(this);
+                const generatorLike = {
+                    next: () => {
+                        reusuableObject.value = this.blockFunction(this.args, blockUtility);
+                        return reusuableObject;
+                    },
+                    [Symbol.iterator] () {
+                        return generatorLike;
+                    }
+                };
+                this.compiled = function evaluate () {
+                    return generatorLike;
+                    // return this.blockFunction(this.args, blockUtility);
+                };
             }
         } else if (this.isHat) {
             // eslint-disable-next-line require-yield
@@ -73,11 +85,19 @@ class BlockCached {
                 return true;
             };
         } else if (this.shadow) {
-            // TODO: optimize it.
-            // eslint-disable-next-line require-yield
-            this.compiled = function* constant () {
-                return Object.values(this.args)[0].value;
-            }.bind(this);
+            const value = Object.values(this.args)[0].value;
+            const generatorLike = {
+                next: () => {
+                    reusuableObject.value = value;
+                    return reusuableObject;
+                },
+                [Symbol.iterator] () {
+                    return generatorLike;
+                }
+            };
+            this.compiled = function constant () {
+                return generatorLike;
+            };
         } else throw new Error(`Error while finding opcode ${this.opcode}`);
     }
 }
