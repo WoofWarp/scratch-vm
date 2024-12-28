@@ -5,6 +5,8 @@ const maybeFormatMessage = require('../util/maybe-format-message');
 const BlockType = require('./block-type');
 const SecurityManager = require('./tw-security-manager');
 
+const { asGenerator } = require('../util/reusuable-generator');
+
 // These extensions are currently built into the VM repository but should not be loaded at startup.
 // TODO: move these out into a separate repository?
 // TODO: change extension spec so that library info, including extension ID, can be collected through static methods
@@ -663,19 +665,22 @@ class ExtensionManager {
                         `Could not find extension block function called ${funcName}`
                     );
                 }
-                return function* (args, util, realBlockInfo) {
-                    const v = serviceObject[funcName];
-                    return v instanceof function* () {}.constructor ?
-                        yield* v.call(serviceObject, args, util, realBlockInfo) :
-                        v.call(serviceObject, args, util, realBlockInfo);
-                };
+                return serviceObject[funcName].bind(serviceObject);
+                // return function (args, util, realBlockInfo) {
+                //     const v = serviceObject[funcName];
+                //     return v.call(serviceObject, args, util, realBlockInfo);
+                // };
             })();
 
-            blockInfo.func = function* (args, util) {
-                const realBlockInfo = getBlockInfo(args);
-                // TODO: filter args using the keys of realBlockInfo.arguments? maybe only if sandboxed?
-                return yield* callBlockFunc(args, util, realBlockInfo);
+            const fn = function (args, util) {
+                return callBlockFunc(args, util, getBlockInfo(args));
             };
+            blockInfo.func = callBlockFunc.prototype?.next ? asGenerator(fn) : fn;
+            // blockInfo.func = function (args, util) {
+            //     const realBlockInfo = getBlockInfo(args);
+            //     // TODO: filter args using the keys of realBlockInfo.arguments? maybe only if sandboxed?
+            //     return yield* callBlockFunc(args, util, realBlockInfo);
+            // };
             break;
         }
         }

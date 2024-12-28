@@ -148,7 +148,7 @@ class Scratch3ControlBlocks {
         else yield util.yield();
     }
 
-    stop (args, util) {
+    *stop (args, util) {
         const option = args.STOP_OPTION.value;
         if (option === 'all') {
             util.stopAll();
@@ -156,7 +156,7 @@ class Scratch3ControlBlocks {
             option === 'other scripts in stage') {
             util.stopOtherTargetThreads();
         } else if (option === 'this script') {
-            util.stopThisScript();
+            yield* util.stopThisScript();
         }
     }
 

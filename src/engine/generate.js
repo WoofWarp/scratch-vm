@@ -1,16 +1,12 @@
-const BlocksExecuteCache = require('./blocks-execute-cache');
+const BlocksExecuteCache = require("./blocks-execute-cache");
 // const log = require('../util/log');
 // const Thread = require('./thread');
-const {Map} = require('immutable');
+const { Map } = require("immutable");
 // const cast = require("../util/cast");
-const blockUtility = require('./block-utility-instance');
-const {KillThread} = require('./thread-status');
+const blockUtility = require("./block-utility-instance");
+const { KillThread, StopThisScript } = require("./thread-status");
+const { toGenerator } = require("../util/reusuable-generator");
 
-// TODO: create reusuable generators framework
-const reusuableObject = {
-    done: true,
-    value: null
-};
 /**
  * A execute.js internal representation of a block to reduce the time spent in
  * execute as the same blocks are called the most.
@@ -27,22 +23,20 @@ const reusuableObject = {
  * @param {object} cached default set of cached values
  */
 class BlockCached {
-    constructor (blockContainer, cached) {
+    constructor(blockContainer, cached) {
         /** @type {import('./runtime')} */
         const runtime = blockContainer.runtime;
-        this.args = {...cached.fields};
+        this.args = { ...cached.fields };
         for (const input of Object.values(cached.inputs)) {
             if (input.block) {
                 const inputBlock = blockContainer.getBlock(input.block);
                 if (inputBlock.next) {
-                    this.args[input.name] = function evaluate () {
+                    this.args[input.name] = function evaluate() {
                         // eslint-disable-next-line no-use-before-define
                         return generate(
                             blockContainer,
                             input.block
-                        )(
-                            blockUtility.thread
-                        );
+                        )(blockUtility.thread);
                     };
                 } else {
                     const cache = BlocksExecuteCache.getCached(
@@ -61,55 +55,28 @@ class BlockCached {
         this.isHat = runtime.getIsHat(cached.opcode);
         if (this.blockFunction) {
             // TODO: refactor
-            if (this.blockFunction instanceof function* () {}.constructor) {
-                // TODO: if blockFunction is not a generator, precalculate all params
-                this.compiled = this.blockFunction.bind(null, this.args, blockUtility);
-            } else {
-                const generatorLike = {
-                    next: () => {
-                        reusuableObject.value = this.blockFunction(this.args, blockUtility);
-                        return reusuableObject;
-                    },
-                    [Symbol.iterator] () {
-                        return generatorLike;
-                    }
-                };
-                this.compiled = function evaluate () {
-                    return generatorLike;
-                    // return this.blockFunction(this.args, blockUtility);
-                };
-            }
+            const bind = this.blockFunction.bind(null, this.args, blockUtility);
+            // TODO: if blockFunction is not a generator, precalculate all params
+            this.compiled = this.blockFunction.prototype?.next
+                ? bind
+                : toGenerator(bind);
         } else if (this.isHat) {
-            // eslint-disable-next-line require-yield
-            this.compiled = function* constant () {
-                return true;
-            };
+            this.compiled = toGenerator(() => true);
         } else if (this.shadow) {
             const value = Object.values(this.args)[0].value;
-            const generatorLike = {
-                next: () => {
-                    reusuableObject.value = value;
-                    return reusuableObject;
-                },
-                [Symbol.iterator] () {
-                    return generatorLike;
-                }
-            };
-            this.compiled = function constant () {
-                return generatorLike;
-            };
+            this.compiled = toGenerator(() => value);
         } else throw new Error(`Error while finding opcode ${this.opcode}`);
     }
 }
 
 class ScriptCached {
-    constructor (blockContainer, cached) {
+    constructor(blockContainer, cached) {
         this.topBlock = cached.id;
         this.block = cached;
         // TODO: the algorithms here are similar.
         // I am not sure if convert them into one function hurts performance or not.
         if (cached.next) {
-            this.compiled = function* substack (thread) {
+            this.compiled = function* substack(thread) {
                 /** @type {import('./runtime')} */
                 const runtime = blockContainer.runtime;
                 let block = this.block;
@@ -131,7 +98,6 @@ class ScriptCached {
                         thread.requestScriptGlowInFrame = true;
                     }
                     thread.blockGlowInFrame = block.id;
-                    blockUtility.thread = thread;
                     result = yield* cache.compiled();
                     if (thread.isKilled) throw KillThread;
                     if (cache.isHat && firstTick) {
@@ -146,9 +112,9 @@ class ScriptCached {
                                         block.id,
                                         result
                                     );
-                                const edgeWasActivated = hasOldEdgeValue ?
-                                    !oldEdgeValue && result :
-                                    result;
+                                const edgeWasActivated = hasOldEdgeValue
+                                    ? !oldEdgeValue && result
+                                    : result;
                                 if (!edgeWasActivated) {
                                     return; // retire thread
                                 }
@@ -167,43 +133,43 @@ class ScriptCached {
                 }
             }.bind(this);
         } else {
-            this.compiled = function* command (thread) {
+            this.compiled = function* command(thread) {
                 /** @type {import('./runtime')} */
                 const runtime = blockContainer.runtime;
                 const block = this.block;
                 const cache =
-                        BlocksExecuteCache.getCached(
-                            blockContainer,
-                            block.id,
-                            BlockCached
-                        ) ??
-                        BlocksExecuteCache.getCached(
-                            runtime.flyoutBlocks,
-                            block.id,
-                            BlockCached
-                        );
+                    BlocksExecuteCache.getCached(
+                        blockContainer,
+                        block.id,
+                        BlockCached
+                    ) ??
+                    BlocksExecuteCache.getCached(
+                        runtime.flyoutBlocks,
+                        block.id,
+                        BlockCached
+                    );
                 if (!blockContainer.forceNoGlow) {
                     thread.requestScriptGlowInFrame = true;
                 }
                 thread.blockGlowInFrame = block.id;
                 blockUtility.thread = thread;
                 const result = yield* cache.compiled();
-                if (thread.isKilled) throw KillThread;
+                if (result === StopThisScript.instance)
+                    yield StopThisScript.instance;
+                if (thread.isKilled) yield KillThread;
                 if (cache.isHat) {
                     if (runtime.getIsEdgeActivatedHat(block.opcode)) {
                         if (!thread.stackClick) {
                             const hasOldEdgeValue =
-                                    thread.target.hasEdgeActivatedValue(
-                                        block.id
-                                    );
+                                thread.target.hasEdgeActivatedValue(block.id);
                             const oldEdgeValue =
-                                    thread.target.updateEdgeActivatedValue(
-                                        block.id,
-                                        result
-                                    );
-                            const edgeWasActivated = hasOldEdgeValue ?
-                                !oldEdgeValue && result :
-                                result;
+                                thread.target.updateEdgeActivatedValue(
+                                    block.id,
+                                    result
+                                );
+                            const edgeWasActivated = hasOldEdgeValue
+                                ? !oldEdgeValue && result
+                                : result;
                             if (!edgeWasActivated) {
                                 return; // retire thread
                             }
@@ -214,9 +180,9 @@ class ScriptCached {
                     yield blockUtility.yield();
                 }
                 if (
-                    !(cache.isHat) &&
-                        typeof result !== 'undefined' &&
-                        this.topBlock === thread.topBlock
+                    !cache.isHat &&
+                    typeof result !== "undefined" &&
+                    this.topBlock === thread.topBlock
                 ) {
                     if (thread.stackClick) {
                         runtime.visualReport(block.id, result);
@@ -232,12 +198,10 @@ class ScriptCached {
                         runtime.requestUpdateMonitor(
                             Map({
                                 id: block.id,
-                                spriteName: targetId ?
-                                    runtime
-                                        .getTargetById(targetId)
-                                        .getName() :
-                                    null,
-                                value: result
+                                spriteName: targetId
+                                    ? runtime.getTargetById(targetId).getName()
+                                    : null,
+                                value: result,
                             })
                         );
                     }

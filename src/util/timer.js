@@ -27,6 +27,14 @@ class Timer {
         this.nowObj = nowObj;
     }
 
+    save () {
+        return this.startTime;
+    }
+    
+    restore (data) {
+        this.startTime = data;
+    }
+
     /**
      * Disable use of self.performance for now as it results in lower performance
      * However, instancing it like below (caching the self.performance to a local variable) negates most of the issues.

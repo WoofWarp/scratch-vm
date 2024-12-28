@@ -1,8 +1,8 @@
-const {StopThisScript} = require('../engine/thread-status');
-const Timer = require('../util/timer');
+const { StopThisScript } = require("../engine/thread-status");
+const Timer = require("../util/timer");
 
 class Scratch3ProcedureBlocks {
-    constructor (runtime) {
+    constructor(runtime) {
         /**
          * The runtime instantiating this block package.
          * @type {Runtime}
@@ -14,27 +14,27 @@ class Scratch3ProcedureBlocks {
      * Retrieve the block primitives implemented by this package.
      * @return {object.<string, Function>} Mapping of opcode to Function.
      */
-    getPrimitives () {
+    getPrimitives() {
         return {
             procedures_definition: this.definition,
             procedures_call: this.call,
             procedures_return: this.return,
             argument_reporter_string_number: this.argumentReporterStringNumber,
-            argument_reporter_boolean: this.argumentReporterBoolean
+            argument_reporter_boolean: this.argumentReporterBoolean,
         };
     }
 
-    *definition () {
+    definition() {
         // No-op: execute the blocks.
     }
-    
+
     /**
      * Step a procedure.
      * @param {!string} procedureCode Procedure code of procedure to step to.
      */
-    *startProcedure (procedureCode, params, thread, context, util) {
-        const generate = require('../engine/generate');
-        const Sequencer = require('../engine/sequencer');
+    *startProcedure(procedureCode, params, thread, util) {
+        const generate = require("../engine/generate");
+        const Sequencer = require("../engine/sequencer");
 
         const definition =
             thread.target.blocks.getProcedureDefinition(procedureCode); // for recursive check
@@ -43,7 +43,7 @@ class Scratch3ProcedureBlocks {
         }
         const generator = generate(thread.target.blocks, definition);
 
-        const procedureStack = context?.procStack ?? [];
+        const procedureStack = thread.context.procStack ?? [];
 
         // Check if the call is recursive.
         // If so, set the thread to yield after pushing.
@@ -66,46 +66,40 @@ class Scratch3ProcedureBlocks {
         } else {
             // Look for warp-mode flag on definition, and set the thread
             // to warp-mode if needed.
-            const definitionBlock =
-                thread.target.blocks.getBlock(definition);
+            const definitionBlock = thread.target.blocks.getBlock(definition);
             const innerBlock = thread.target.blocks.getBlock(
                 definitionBlock.inputs.custom_block.block
             );
             let doWarp = false;
             if (innerBlock && innerBlock.mutation) {
                 const warp = innerBlock.mutation.warp;
-                if (typeof warp === 'boolean') {
+                if (typeof warp === "boolean") {
                     doWarp = warp;
-                } else if (typeof warp === 'string') {
-                    doWarp = JSON.parse(warp);
+                } else if (typeof warp === "string") {
+                    innerBlock.mutation.warp = doWarp = !!JSON.parse(warp);
                 }
             }
             if (doWarp) {
-                thread.warpTimer = new Timer();
+                if (!thread.warpTimer) thread.warpTimer = new Timer();
                 thread.warpTimer.start();
             } else if (isRecursive) {
                 // In normal-mode threads, yield any time we have a recursive call.
                 yield util.yield();
             }
         }
-        const newContext = {...context,
-            params,
-            procStack: procedureStack
-        };
-        // eslint-disable-next-line require-atomic-updates
-        thread.context = newContext;
+        const { params: oldParams } = thread.context;
+        thread.context.params = params;
+        thread.context.procStack = procedureStack;
         try {
-            yield* generator(
-                thread
-            );
+            yield* generator(thread);
         } finally {
             // eslint-disable-next-line require-atomic-updates
-            thread.context = context;
+            thread.context.params = oldParams;
             procedureStack.pop();
         }
     }
 
-    *call (args, util) {
+    *call(args, util) {
         const isReporter = !!args.mutation.return;
 
         const procedureCode = args.mutation.proccode;
@@ -114,24 +108,10 @@ class Scratch3ProcedureBlocks {
 
         if (paramNamesIdsAndDefaults === null) {
             if (isReporter) {
-                return '';
+                return "";
             }
             return;
         }
-
-        // if (stackFrame.executed) {
-        //     if (isReporter) {
-        //         const returnValue = stackFrame.returnValue;
-        //         // This stackframe will be reused for other reporters in this block, so clean it up for them.
-        //         // Can't use reset() because that will reset too much.
-        //         const threadStackFrame = util.thread.peekStackFrame();
-        //         threadStackFrame.params = null;
-        //         delete stackFrame.returnValue;
-        //         delete stackFrame.executed;
-        //         return returnValue;
-        //     }
-        //     return;
-        // }
 
         // const procedureCode = args.mutation.proccode;
         // const paramNamesIdsAndDefaults = util.getProcedureParamNamesIdsAndDefaults(procedureCode);
@@ -141,15 +121,14 @@ class Scratch3ProcedureBlocks {
         // Match Scratch 2.0 behavior and noop.
         if (paramNamesIdsAndDefaults === null) {
             if (isReporter) {
-                return '';
+                return "";
             }
             return;
         }
 
         const [paramNames, paramIds, paramDefaults] = paramNamesIdsAndDefaults;
-        
+
         const thread = util.thread;
-        const context = thread.context;
 
         // Initialize params for the current stackFrame to {}, even if the procedure does
         // not take any arguments. This is so that `getParam` down the line does not look
@@ -169,28 +148,34 @@ class Scratch3ProcedureBlocks {
             return result;
         }
 
-        const warpTimer = thread.warpTimer;
+        const warpTimer = thread.warpTimer ? thread.warpTimer.save() : null;
         try {
-            yield* this.startProcedure(procedureCode, params, thread, context, util);
+            yield* this.startProcedure(
+                procedureCode,
+                params,
+                thread,
+                util
+            );
         } catch (e) {
-            if (e === StopThisScript.instance) return e.value ?? '';
+            if (e === StopThisScript.instance) return e.value ?? "";
             throw e;
         } finally {
-            thread.warpTimer = warpTimer;
+            if (warpTimer !== null) thread.warpTimer.restore(warpTimer);
+            else thread.warpTimer = null;
         }
-        if (isReporter) return '';
+        if (isReporter) return "";
     }
 
-    *return (args, util) {
+    *return(args, util) {
         return util.stopThisScript(yield* args.VALUE());
     }
 
-    argumentReporterStringNumber (args, util) {
+    argumentReporterStringNumber(args, util) {
         const value = util.getParam(args.VALUE.value);
         if (value === null) {
             // tw: support legacy block
-            if (String(args.VALUE.value).toLowerCase() === 'last key pressed') {
-                return util.ioQuery('keyboard', 'getLastKeyPressed');
+            if (String(args.VALUE.value).toLowerCase() === "last key pressed") {
+                return util.ioQuery("keyboard", "getLastKeyPressed");
             }
             // When the parameter is not found in the most recent procedure
             // call, the default is always 0.
@@ -199,15 +184,18 @@ class Scratch3ProcedureBlocks {
         return value;
     }
 
-    argumentReporterBoolean (args, util) {
+    argumentReporterBoolean(args, util) {
         const value = util.getParam(args.VALUE.value);
         if (value === null) {
             // tw: implement is compiled? and is turbowarp?
             const lowercaseValue = String(args.VALUE.value).toLowerCase();
-            if (util.target.runtime.compilerOptions.enabled && lowercaseValue === 'is compiled?') {
+            if (
+                util.target.runtime.compilerOptions.enabled &&
+                lowercaseValue === "is compiled?"
+            ) {
                 return true;
             }
-            if (lowercaseValue === 'is turbowarp?') {
+            if (lowercaseValue === "is turbowarp?") {
                 return true;
             }
             // When the parameter is not found in the most recent procedure
